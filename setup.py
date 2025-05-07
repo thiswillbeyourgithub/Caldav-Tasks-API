@@ -1,0 +1,43 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="caldav-tasks-api",
+    version="0.1.0",
+    author="thiswillbeyourgithub",
+    description="A Python client for CalDAV task servers, with a CLI.",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/thiswillbeyourgithub/caldav-tasks-api/",
+    packages=find_packages(include=['caldav_tasks_api', 'caldav_tasks_api.*']),
+    install_requires=[
+        "caldav>=1.4.0",
+        # "click>=8.1.8", # Removing click as fire is used
+        "urllib3>=2.4.0",
+        "loguru>=0.7.0", # Add loguru
+        "platformdirs>=3.0.0", # Add platformdirs
+        "fire>=0.5.0", # Add fire as it's used in __main__.py
+    ],
+    extras_require={
+        "dev": [
+            "dotenv>=0.9.9",
+            "black>=25.1.0",
+            "twine>=6.1.0",
+            "build>=1.2.2.post1",
+            "bumpver>=2024.1130",
+            "pytest>=8.3.5",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "caldav-tasks-api-cli=caldav_tasks_api.__main__:CliCommands", # fire can expose classes directly
+        ],
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Developers",
+        "Topic :: Utilities",
+    ],
+    python_requires='>=3.8',
+)
