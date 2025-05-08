@@ -177,3 +177,55 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
     assert created_task_on_server is not None, f"Created task '{new_task_text}' (UID: {created_task_data.uid}) not found in list after add."
     assert created_task_on_server.text == new_task_text, "Text of task on server does not match."
     print(f"Successfully created task '{created_task_on_server.text}' with UID '{created_task_on_server.uid}'")
+
+
+def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
+    """
+    Test the to_dict() method of TaskData for tasks in the designated test list.
+    """
+    api = tasks_api_instance
+
+    # Find the target test list
+    target_list: TaskListData | None = None
+    # Ensure data is loaded before searching for the list
+    api.load_remote_data()
+    for tl in api.task_lists:
+        if tl.name == test_list_name:
+            target_list = tl
+            break
+    
+    if not target_list:
+        pytest.skip(f"Test list '{test_list_name}' not found on the server. Skipping to_dict test.")
+
+    if not target_list.tasks:
+        print(f"Warning: No tasks found in the test list '{test_list_name}'. Test test_task_to_dict might not be comprehensive.")
+        return # Nothing to test if there are no tasks
+
+    print(f"Found {len(target_list.tasks)} tasks in list '{test_list_name}' for to_dict testing.")
+    for task in target_list.tasks:
+        assert isinstance(task, TaskData), "Task object is not of type TaskData."
+        print(f"  Testing to_dict for task: {task.text[:50]}... (UID: {task.uid})")
+        task_dict = task.to_dict()
+
+        assert task_dict is not None, "to_dict() should return a dictionary, not None."
+        assert isinstance(task_dict, dict), "to_dict() should return a type dict."
+        
+        # Check for essential keys
+        assert "uid" in task_dict, "Task dictionary should contain 'uid'."
+        assert task_dict["uid"] == task.uid, "Task dictionary 'uid' should match task.uid."
+        
+        assert "text" in task_dict, "Task dictionary should contain 'text'."
+        assert task_dict["text"] == task.text, "Task dictionary 'text' should match task.text."
+
+        assert "list_uid" in task_dict, "Task dictionary should contain 'list_uid'."
+        assert task_dict["list_uid"] == task.list_uid, "Task dictionary 'list_uid' should match task.list_uid."
+
+        assert "created_at" in task_dict, "Task dictionary should contain 'created_at'."
+        assert "changed_at" in task_dict, "Task dictionary should contain 'changed_at'."
+        assert "completed" in task_dict, "Task dictionary should contain 'completed'."
+        
+        # Check x_properties structure
+        assert "x_properties" in task_dict, "Task dictionary should contain 'x_properties'."
+        assert isinstance(task_dict["x_properties"], dict), "'x_properties' in task_dict should be a dict."
+        
+        print(f"    Task UID {task.uid} to_dict() successful.")
