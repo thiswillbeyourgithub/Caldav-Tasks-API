@@ -7,6 +7,7 @@ as command-line interface commands.
 
 import fire
 import os
+import json # For JSON output
 # import pprint as pp # No longer used
 import code  # For interactive debugging
 from typing import List, Optional  # For type hinting
@@ -34,6 +35,7 @@ class CliCommands:
         nextcloud_mode: bool = True,
         debug: bool = False,
         list: Optional[List[str]] = None,
+        json: bool = False,  # Added json flag
     ):  # Added 'list' argument
         """
         Initializes the CLI commands.
@@ -45,6 +47,7 @@ class CliCommands:
             nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
             debug: If True, enables PDB post-mortem debugging and interactive console.
             list: Optional list of task list names or UIDs to load.
+            json: If True, output the summary as JSON.
         """
         self._url = url or os.environ.get("CALDAV_URL")
         self._username = username or os.environ.get("CALDAV_USERNAME")
@@ -52,9 +55,10 @@ class CliCommands:
         self._nextcloud_mode = nextcloud_mode
         self._debug = debug  # Store the debug flag
         self._target_lists = list  # Store the target lists
+        self._json_output = json # Store the json output flag
 
         self._api: TasksAPI | None = None
-        logger.debug(f"CliCommands initialized with url: {'***' if self._url else None}, user: {self._username}, nc_mode: {self._nextcloud_mode}, debug: {self._debug}, lists: {self._target_lists}")
+        logger.debug(f"CliCommands initialized with url: {'***' if self._url else None}, user: {self._username}, nc_mode: {self._nextcloud_mode}, debug: {self._debug}, lists: {self._target_lists}, json: {self._json_output}")
 
 
     def _validate_credentials(self) -> None:
@@ -104,9 +108,16 @@ class CliCommands:
         """
         try:
             api = self._get_api()
-            logger.info("Loading remote tasks...")
+            logger.info("Loading remote tasks...") # Keep this log for user feedback even with JSON
             api.load_remote_data()
 
+            if self._json_output:
+                # Prepare data for JSON output
+                output_data = [tl.to_dict() for tl in api.task_lists]
+                print(json.dumps(output_data, ensure_ascii=False, indent=2))
+                return # Exit after printing JSON
+
+            # Existing summary logging
             logger.info("--- Summary ---")
             logger.info(f"Total Task Lists loaded: {len(api.task_lists)}")
             total_tasks_count = 0
@@ -120,7 +131,7 @@ class CliCommands:
 
             logger.info(f"Total Tasks loaded: {total_tasks_count}")
 
-            if self._debug:
+            if self._debug: # Interactive console should not run if JSON output is requested
                 logger.info(
                     "Debug mode: Starting interactive console. API available as 'api'."
                 )
