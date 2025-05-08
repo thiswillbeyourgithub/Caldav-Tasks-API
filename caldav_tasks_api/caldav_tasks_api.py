@@ -491,14 +491,14 @@ class TasksAPI:
                 f"  Found VTODO by UID '{task_data.uid}' (URL: {server_task_obj.url}) in calendar '{target_raw_calendar.name}'."
             )
 
-            # Save the original text for debugging
-            original_text = task_data.text
+            # Save the desired text that we want to preserve from the client side
+            desired_text = task_data.text
             
             updated_ical_string = task_data.to_ical()
             logger.debug(
                 f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
             )
-            logger.debug(f"  Text being updated: '{original_text}'")
+            logger.debug(f"  Text being updated: '{desired_text}'")
 
             server_task_obj.data = updated_ical_string
             server_task_obj.save()
@@ -513,17 +513,14 @@ class TasksAPI:
                     server_task_obj.data, list_uid=task_data.list_uid
                 )
                 
-                # Store our requested text change
-                original_text = task_data.text
-                
                 # Update the original task_data instance with server-authoritative values
                 task_data.uid = refreshed_task_data.uid # Should be the same
                 
                 # For text, ALWAYS keep our requested change regardless of server response
                 # This is because some CalDAV servers don't properly reflect text changes
-                logger.debug(f"Preserving our original requested text: '{original_text}'")
-                # Explicitly restore our original text instead of using server response
-                task_data.text = original_text
+                logger.debug(f"Preserving our desired text: '{desired_text}'")
+                # Explicitly restore our desired text instead of using server response
+                task_data.text = desired_text
                 
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
