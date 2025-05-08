@@ -1,6 +1,8 @@
 import pytest
 from caldav_tasks_api import TasksAPI, TaskData, TaskListData # Assuming tasks_api is importable
 import uuid
+import subprocess
+import sys # To get python executable
 
 def test_fetch_task_lists(tasks_api_instance: TasksAPI):
     """Test that task lists can be fetched and are populated."""
@@ -229,3 +231,35 @@ def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
         assert isinstance(task_dict["x_properties"], dict), "'x_properties' in task_dict should be a dict."
         
         print(f"    Task UID {task.uid} to_dict() successful.")
+
+
+def test_cli_show_summary_json_runs_successfully(caldav_credentials):
+    """
+    Test that the CLI 'show_summary' command with '--json' runs successfully.
+    This test relies on CALDAV_URL, CALDAV_USERNAME, CALDAV_PASSWORD environment
+    variables being set (handled by the caldav_credentials fixture).
+    """
+    # caldav_credentials fixture ensures env vars are set for the subprocess
+    command = [
+        sys.executable,  # Path to current python interpreter
+        "-m",
+        "caldav_tasks_api",
+        "--json", # Global option for json output
+        "show_summary" # The command to run
+    ]
+    
+    print(f"Running CLI command: {' '.join(command)}")
+    
+    try:
+        # check=True will raise CalledProcessError if the command returns a non-zero exit code.
+        # capture_output=True can be used if we need to inspect stdout/stderr, but not needed here.
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        print(f"CLI command stdout (first 200 chars): {result.stdout[:200]}...")
+        print(f"CLI command stderr: {result.stderr}")
+    except subprocess.CalledProcessError as e:
+        print(f"CLI command failed with exit code {e.returncode}")
+        print(f"Stdout: {e.stdout}")
+        print(f"Stderr: {e.stderr}")
+        pytest.fail(f"CLI command {' '.join(command)} failed with error: {e.stderr}")
+    except FileNotFoundError:
+        pytest.fail(f"CLI command failed: `python -m caldav_tasks_api` could not be found. Ensure the package is installed correctly, e.g., `pip install -e .`")
