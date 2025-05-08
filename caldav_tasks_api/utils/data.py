@@ -330,12 +330,22 @@ class TaskData:
             end_idx = ical_str.find("END:VTODO")
             if start_idx != -1 and end_idx != -1:
                 vtodo_content = ical_str[start_idx:end_idx]
-
+                
+        # First, unfold the iCal content (RFC 5545 section 3.1)
+        # Lines that start with whitespace are a continuation of the previous line
+        unfolded_lines = []
+        for line in vtodo_content.splitlines():
+            if line.startswith(" ") or line.startswith("\t"):
+                if unfolded_lines:  # Make sure there's a previous line to append to
+                    unfolded_lines[-1] += line[1:]  # Skip the leading whitespace
+            else:
+                unfolded_lines.append(line)
+        
         # Helper to parse property values, handling potential parameters (e.g., DUE;VALUE=DATE:...)
         def get_value(line: str) -> str:
             return line.split(":", 1)[-1]
 
-        for line in vtodo_content.splitlines():
+        for line in unfolded_lines:
             if ":" not in line:  # Skip lines without a colon (like BEGIN:VTODO itself)
                 continue
 
