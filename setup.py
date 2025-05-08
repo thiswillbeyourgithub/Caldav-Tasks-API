@@ -13,8 +13,8 @@ setup(
         "caldav>=1.4.0",
         # "click>=8.1.8", # Removing click as fire is used
         "urllib3>=2.4.0",
-        "loguru>=0.7.0", # Add loguru
-        "platformdirs>=3.0.0", # Add platformdirs
+        "loguru>=0.7.0",
+        "platformdirs>=3.0.0",
         "fire>=0.5.0", # Add fire as it's used in __main__.py
     ],
     extras_require={
