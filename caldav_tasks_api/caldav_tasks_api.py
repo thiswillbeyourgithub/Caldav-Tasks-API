@@ -496,7 +496,6 @@ class TasksAPI:
             # depending on desired logic. For now, let's assume it might be set to non-100 manually.
             pass
 
-
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before updating task.")
             self._fetch_raw_calendars()
@@ -530,135 +529,90 @@ class TasksAPI:
             logger.debug(f"  Setting task text to: '{desired_text}'")
             task_data.text = desired_text
             
-            updated_ical_string = task_data.to_ical()
-            logger.debug(
-                f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
-            )
+            # Define property handling helper function to reduce repetition
+            def update_ical_property(name, value, component=None):
+                component = component or server_task_obj.icalendar_component
+                if value:
+                    component[name] = value
+                elif name in component:
+                    try:
+                        del component[name]
+                    except KeyError:
+                        pass
             
-            # Double-check that the iCal contains our text
-            if desired_text not in updated_ical_string:
-                logger.warning(f"  Warning: Desired text '{desired_text}' not found in generated iCal. This might cause update issues.")
-                # Force regeneration of iCal with the correct text
-                task_data.text = desired_text
-                updated_ical_string = task_data.to_ical()
-                if desired_text not in updated_ical_string:
-                    logger.error(f"  Critical error: Unable to include text '{desired_text}' in iCal after retry")
-            
-            # Update individual properties directly on the iCalendar component
-            # This approach works more reliably than setting the entire data string
+            # Try the direct property update approach first (most reliable)
             try:
-                logger.debug(f"  Updating task properties directly on iCalendar component")
+                logger.debug("Updating task properties directly on iCalendar component")
                 
-                # Set the main properties
-                server_task_obj.icalendar_component["summary"] = desired_text  # Set text directly
+                # Core properties that should always be set
+                update_ical_property("summary", desired_text)
+                update_ical_property("last-modified", task_data.changed_at)
+                update_ical_property("percent-complete", task_data.percent_complete)
                 
-                if task_data.notes:
-                    server_task_obj.icalendar_component["description"] = task_data.notes
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["description"]
-                    except KeyError:
-                        pass
-                
-                server_task_obj.icalendar_component["last-modified"] = task_data.changed_at
-                server_task_obj.icalendar_component["percent-complete"] = task_data.percent_complete
-                
-                # Handle dates
-                if task_data.due_date:
-                    server_task_obj.icalendar_component["due"] = task_data.due_date
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["due"]
-                    except KeyError:
-                        pass
-                        
-                if task_data.start_date:
-                    server_task_obj.icalendar_component["dtstart"] = task_data.start_date
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["dtstart"]
-                    except KeyError:
-                        pass
-                
-                # Other properties
-                if task_data.priority:
-                    server_task_obj.icalendar_component["priority"] = task_data.priority
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["priority"]
-                    except KeyError:
-                        pass
-                        
-                if task_data.parent:
-                    server_task_obj.icalendar_component["related-to"] = task_data.parent
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["related-to"]
-                    except KeyError:
-                        pass
-                
-                if task_data.tags:
-                    server_task_obj.icalendar_component["categories"] = ",".join(task_data.tags)
-                else:
-                    try:
-                        del server_task_obj.icalendar_component["categories"]
-                    except KeyError:
-                        pass
+                # Optional properties that may be empty
+                update_ical_property("description", task_data.notes)
+                update_ical_property("due", task_data.due_date)
+                update_ical_property("dtstart", task_data.start_date)
+                update_ical_property("priority", task_data.priority if task_data.priority > 0 else None)
+                update_ical_property("related-to", task_data.parent)
+                update_ical_property("categories", ",".join(task_data.tags) if task_data.tags else None)
                 
                 # X-properties
                 for key, value in task_data.x_properties.items():
-                    server_task_obj.icalendar_component[key] = value
+                    update_ical_property(key, value)
                 
                 # Save changes
                 server_task_obj.save()
                 
-                # Handle completion status separately
+                # Handle completion status separately as it may require special API calls
                 if task_data.completed:
                     server_task_obj.complete()
                 else:
                     server_task_obj.uncomplete()
                 
-                # Verify the text was actually updated on the server
-                if hasattr(server_task_obj, 'icalendar_component') and 'summary' in server_task_obj.icalendar_component:
-                    actual_text = str(server_task_obj.icalendar_component.get('summary', ''))
-                    if actual_text != desired_text:
-                        logger.warning(f"  Text verification failed! Server has '{actual_text}' but we want '{desired_text}'")
-                        # Force it one more time and save again
-                        server_task_obj.icalendar_component["summary"] = desired_text
-                        server_task_obj.save()
-                        logger.info(f"  Attempted second direct text update after verification failed")
-                
-                logger.info(f"    Successfully updated task UID '{task_data.uid}' with direct property approach")
+                logger.info(f"Successfully updated task UID '{task_data.uid}' with direct property approach")
                 
             except Exception as e_direct:
-                logger.warning(f"  Direct property update failed: {e_direct}. Falling back to full data replacement.")
+                logger.warning(f"Direct property update failed: {e_direct}. Trying fallback approaches.")
                 
-                # Fallback to the original approach of setting the whole data string
+                # Generate complete iCal string from task data
+                updated_ical_string = task_data.to_ical()
+                
+                # Try multiple fallback approaches in sequence
+                success = False
+                
+                # Approach 1: Full data replacement
                 try:
                     server_task_obj.data = updated_ical_string
                     server_task_obj.save()
-                    logger.info(f"    Fallback: Saved updated VTODO UID '{task_data.uid}' using full data replacement")
-                except Exception as e_data:
-                    logger.warning(f"    Full data replacement failed: {e_data}. Trying property-specific update.")
+                    logger.info(f"Fallback 1: Updated task using full data replacement")
+                    success = True
+                except Exception as e1:
+                    logger.warning(f"Fallback 1 failed: {e1}")
                 
-                # Additional fallback for the summary/text property specifically
-                try:
-                    summary_prop = {'SUMMARY': desired_text}
-                    server_task_obj.update_properties(summary_prop)
-                    logger.info(f"  Attempted direct SUMMARY property update as additional fallback")
-                except Exception as e_prop:
-                    logger.warning(f"  Direct SUMMARY property update failed: {e_prop}")
-                    
-                # One last attempt with caldav library's native methods if available
-                try:
-                    # Some caldav library versions have this direct method
-                    if hasattr(server_task_obj, 'set_summary'):
+                # Approach 2: Update specific properties
+                if not success:
+                    try:
+                        properties_dict = {'SUMMARY': desired_text}
+                        server_task_obj.update_properties(properties_dict)
+                        logger.info(f"Fallback 2: Updated at least the summary property")
+                        success = True
+                    except Exception as e2:
+                        logger.warning(f"Fallback 2 failed: {e2}")
+                
+                # Approach 3: Use set_summary if available
+                if not success and hasattr(server_task_obj, 'set_summary'):
+                    try:
                         server_task_obj.set_summary(desired_text)
-                        logger.info(f"  Attempted set_summary() method as last resort")
-                except Exception as e_set:
-                    logger.warning(f"  set_summary() method failed or not available: {e_set}")
-
-            # Re-parse data from server response to get authoritative fields (e.g., LAST-MODIFIED)
+                        logger.info(f"Fallback 3: Updated summary using set_summary() method")
+                        success = True
+                    except Exception as e3:
+                        logger.warning(f"Fallback 3 failed: {e3}")
+                
+                if not success:
+                    logger.error(f"All update approaches failed for task UID '{task_data.uid}'")
+            
+            # Re-parse data from server response to get authoritative fields
             if server_task_obj.data:
                 logger.debug("Re-parsing task data from server response after update.")
                 refreshed_task_data = TaskData.from_ical(
@@ -666,29 +620,14 @@ class TasksAPI:
                 )
                 
                 # Update the original task_data instance with server-authoritative values
-                task_data.uid = refreshed_task_data.uid # Should be the same
+                # but preserve our desired text which may not be reflected properly
+                task_data.uid = refreshed_task_data.uid
+                task_data.text = desired_text  # Always keep our intended text
                 
-                # For text, ALWAYS keep our requested change regardless of server response
-                # This is because some CalDAV servers don't properly reflect text changes
-                logger.debug(f"Preserving our desired text: '{desired_text}' instead of server response text: '{refreshed_task_data.text}'")
-                
-                # Explicitly restore our desired text instead of using server response
-                task_data.text = desired_text
-                
-                # Double-check that the text was actually set locally
-                if task_data.text != desired_text:
-                    logger.error(f"  Failed to preserve text '{desired_text}'! Current value: '{task_data.text}'")
-                    # Force it again for safety
-                    task_data.text = desired_text
-                
-                # Final verification of server data
-                if refreshed_task_data.text != desired_text:
-                    logger.warning(f"  Server still reports different text: '{refreshed_task_data.text}' vs desired '{desired_text}'")
-                    # This is likely a refresh issue - we need to verify on a completely fresh fetch
-                
+                # Copy other properties from server response
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
-                task_data.changed_at = refreshed_task_data.changed_at # Server's LAST-MODIFIED
+                task_data.changed_at = refreshed_task_data.changed_at
                 task_data.completed = refreshed_task_data.completed
                 task_data.percent_complete = refreshed_task_data.percent_complete
                 task_data.due_date = refreshed_task_data.due_date
@@ -697,21 +636,20 @@ class TasksAPI:
                 task_data.parent = refreshed_task_data.parent
                 task_data.tags = refreshed_task_data.tags
                 task_data.rrule = refreshed_task_data.rrule
-                task_data.x_properties = refreshed_task_data.x_properties # Ensure XProperties are updated
-
+                task_data.x_properties = refreshed_task_data.x_properties
+                
                 task_data.synced = True
-                logger.debug(f"  Task data UID '{task_data.uid}' updated and synced with server response. Text: '{task_data.text}'")
+                logger.debug(f"Task data updated and synced with server response. Text: '{task_data.text}'")
             else:
-                # This case should ideally not happen if save() was successful and server returns content
-                logger.warning("  Server did not return data for the updated task. Marking as synced, but local data might not reflect server's exact state for LAST-MODIFIED.")
+                # This case should ideally not happen if save() was successful
+                logger.warning("Server did not return data for the updated task. Marking as synced, but local data might not reflect server's exact state.")
                 task_data.synced = True
-
 
             return task_data
 
         except caldav.lib.error.NotFoundError:
             logger.error(
-                f"    Task with UID '{task_data.uid}' not found in calendar '{target_raw_calendar.name}' for update."
+                f"Task with UID '{task_data.uid}' not found in calendar '{target_raw_calendar.name}' for update."
             )
             task_data.synced = False
             raise ValueError(
@@ -719,9 +657,9 @@ class TasksAPI:
             )
         except Exception as e:
             logger.error(
-                f"    Error updating VTODO UID '{task_data.uid}' in calendar '{target_raw_calendar.name}': {e}", exc_info=True
+                f"Error updating VTODO UID '{task_data.uid}' in calendar '{target_raw_calendar.name}': {e}", exc_info=True
             )
-            task_data.synced = False # Ensure synced is false on error
+            task_data.synced = False  # Ensure synced is false on error
             if self.debug:
                 logger.error("Debug mode: Entering PDB for update_task error.")
                 pdb.post_mortem()
