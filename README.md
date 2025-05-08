@@ -35,7 +35,13 @@ Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Rad
 
 ## Installation
 
-Currently, the project is not yet packaged for PyPI. To use it:
+The CalDAV Tasks API can be installed directly from PyPI:
+
+```bash
+pip install caldav-tasks-api
+```
+
+Alternatively, you can install from source:
 
 1.  Clone the repository:
     ```bash
