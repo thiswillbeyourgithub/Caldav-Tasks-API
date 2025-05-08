@@ -11,7 +11,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 This library was developed as a foundational component for integrating CalDAV task management with more advanced systems. The primary goal is to serve as a backbone for:
 
 1.  Synchronizing tasks from applications like the excellent [Tasks.org Android app](https://f-droid.org/packages/org.tasks/).
-2.  Enabling features such as smart task prioritization using ELO ranking, envisioned to work with a [Litoy-like setup](https://github.com/thiswillbeyourgithub/mini_LiTOY) (Note: link is a placeholder for the user's intended project).
+2.  Enabling features such as smart task prioritization using ELO ranking, envisioned to work with a [Litoy-like setup](https://github.com/thiswillbeyourgithub/mini_LiTOY).
 
 By providing a robust Python interface to CalDAV tasks, this project aims to bridge the gap between standard task management and custom, intelligent task processing workflows.
 
