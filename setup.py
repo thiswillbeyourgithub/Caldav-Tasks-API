@@ -7,7 +7,7 @@ setup(
     description="A Python client for CalDAV task servers, with a CLI.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/thiswillbeyourgithub/caldav-tasks-api/",
+    url="https://github.com/thiswillbeyourgithub/CaldavTasksAPI/",
     packages=find_packages(include=['caldav_tasks_api', 'caldav_tasks_api.*']),
     install_requires=[
         "caldav>=1.4.0",
