@@ -98,6 +98,7 @@ class CliCommands:
                 nextcloud_mode=self._nextcloud_mode,
                 debug=self._debug,  # Pass the debug flag to TasksAPI
                 target_lists=self._target_lists,  # Pass the target lists
+                read_only=True,  # CLI usage of TasksAPI is read-only by default
             )
         return self._api
 

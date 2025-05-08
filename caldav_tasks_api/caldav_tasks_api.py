@@ -25,6 +25,7 @@ class TasksAPI:
         nextcloud_mode: bool = True,
         debug: bool = False,
         target_lists: Optional[List[str]] = None,
+        read_only: bool = False,  # Added read_only parameter
     ):
         """
         Initializes the TasksAPI and connects to the CalDAV server.
@@ -36,6 +37,7 @@ class TasksAPI:
             nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
             debug: If True, enables PDB post-mortem debugging on specific errors.
             target_lists: Optional list of calendar names or UIDs to filter by.
+            read_only: If True, API operates in read-only mode, preventing modifications.
         """
         self.url = url
         self.username = username
@@ -43,8 +45,9 @@ class TasksAPI:
         self.nextcloud_mode = nextcloud_mode
         self.debug = debug  # Store the debug flag
         self.target_lists = target_lists  # Store the target lists
+        self.read_only = read_only # Store the read_only flag
 
-        logger.debug(f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}")
+        logger.debug(f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}")
 
         self._adjust_url()
 
@@ -314,6 +317,10 @@ class TasksAPI:
         """
         Adds a new task to the specified task list on the server.
         """
+        if self.read_only:
+            logger.error("Attempt to add task in read-only mode.")
+            raise PermissionError("API is in read-only mode. Adding tasks is not allowed.")
+        
         logger.info(f"Attempting to add task (UID: {task_data.uid if task_data.uid else 'new'}) to list UID: {list_uid}")
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before adding task.")
@@ -378,6 +385,10 @@ class TasksAPI:
         """
         Deletes a task from the specified task list on the server.
         """
+        if self.read_only:
+            logger.error("Attempt to delete task in read-only mode.")
+            raise PermissionError("API is in read-only mode. Deleting tasks is not allowed.")
+
         logger.info(f"Attempting to delete task UID '{task_uid}' from list UID '{list_uid}'.")
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before deleting task.")
@@ -428,6 +439,10 @@ class TasksAPI:
         The provided task_data object should have its fields already modified.
         Its changed_at timestamp will be updated before sending.
         """
+        if self.read_only:
+            logger.error("Attempt to update task in read-only mode.")
+            raise PermissionError("API is in read-only mode. Updating tasks is not allowed.")
+
         logger.info(f"Attempting to update task UID '{task_data.uid}' in list UID '{task_data.list_uid}'.")
 
         if not task_data.uid:
