@@ -328,3 +328,102 @@ def test_cli_show_summary_json_runs_successfully(caldav_credentials):
         pytest.fail(f"CLI command {' '.join(command)} failed with error: {e.stderr}")
     except FileNotFoundError:
         pytest.fail(f"CLI command failed: `python -m caldav_tasks_api` could not be found. Ensure the package is installed correctly, e.g., `pip install -e .`")
+
+
+def test_add_task_in_read_only_mode(read_only_tasks_api_instance: TasksAPI, test_list_name: str):
+    """Test that adding a task fails with PermissionError in read-only mode."""
+    api = read_only_tasks_api_instance
+
+    # Find the target test list UID (or any list UID, as the operation should fail before that)
+    target_list_uid = None
+    if api.task_lists:
+        # Try to find the specific test list, fallback to any list if not found
+        # The operation should fail regardless of whether the list exists or not in read-only mode
+        for tl in api.task_lists:
+            if tl.name == test_list_name:
+                target_list_uid = tl.uid
+                break
+        if not target_list_uid: # Fallback to the first list if test_list_name not found
+            target_list_uid = api.task_lists[0].uid
+
+    if not target_list_uid and not api.task_lists:
+         # If there are no lists at all, we can still test the read-only check
+         # by providing a dummy list_uid. The PermissionError should be raised
+         # before the API attempts to find the list on the server.
+         target_list_uid = "dummy-list-uid-for-read-only-test"
+
+
+    task_to_create = TaskData(
+        text=f"Read-Only Test Task - {uuid.uuid4()}",
+        list_uid=target_list_uid
+    )
+    
+    with pytest.raises(PermissionError) as excinfo:
+        api.add_task(task_to_create, target_list_uid) # type: ignore
+    assert "API is in read-only mode" in str(excinfo.value)
+    print(f"Successfully asserted PermissionError when adding task in read-only mode: {excinfo.value}")
+
+
+def test_delete_task_in_read_only_mode(read_only_tasks_api_instance: TasksAPI, test_list_name: str):
+    """Test that deleting a task fails with PermissionError in read-only mode."""
+    api = read_only_tasks_api_instance
+
+    # Similar to add_task, find a list UID or use a dummy one
+    target_list_uid = None
+    if api.task_lists:
+        for tl in api.task_lists:
+            if tl.name == test_list_name:
+                target_list_uid = tl.uid
+                break
+        if not target_list_uid:
+            target_list_uid = api.task_lists[0].uid
+    
+    if not target_list_uid and not api.task_lists:
+        target_list_uid = "dummy-list-uid-for-read-only-test"
+
+    dummy_task_uid = f"dummy-task-uid-for-delete-{uuid.uuid4()}"
+    
+    with pytest.raises(PermissionError) as excinfo:
+        api.delete_task(dummy_task_uid, target_list_uid) # type: ignore
+    assert "API is in read-only mode" in str(excinfo.value)
+    print(f"Successfully asserted PermissionError when deleting task in read-only mode: {excinfo.value}")
+
+
+def test_update_task_in_read_only_mode(read_only_tasks_api_instance: TasksAPI, test_list_name: str):
+    """Test that updating a task fails with PermissionError in read-only mode."""
+    api = read_only_tasks_api_instance
+
+    target_list_uid = None
+    existing_task_uid = None
+
+    if api.task_lists:
+        # Try to find the specific test list
+        test_list_found = None
+        for tl in api.task_lists:
+            if tl.name == test_list_name:
+                test_list_found = tl
+                break
+        
+        if test_list_found and test_list_found.tasks:
+            target_list_uid = test_list_found.uid
+            existing_task_uid = test_list_found.tasks[0].uid # Use the first task from the test list
+        elif api.task_lists[0].tasks: # Fallback to first task of first list
+            target_list_uid = api.task_lists[0].uid
+            existing_task_uid = api.task_lists[0].tasks[0].uid
+    
+    if not target_list_uid or not existing_task_uid:
+        # If no suitable task is found, create dummy data.
+        # The PermissionError should be raised before server interaction.
+        target_list_uid = target_list_uid or "dummy-list-uid-for-read-only-test"
+        existing_task_uid = existing_task_uid or f"dummy-task-uid-for-update-{uuid.uuid4()}"
+
+    task_to_update = TaskData(
+        uid=existing_task_uid,
+        list_uid=target_list_uid, # type: ignore
+        text=f"Attempted Update - {uuid.uuid4()}"
+    )
+    
+    with pytest.raises(PermissionError) as excinfo:
+        api.update_task(task_to_update)
+    assert "API is in read-only mode" in str(excinfo.value)
+    print(f"Successfully asserted PermissionError when updating task in read-only mode: {excinfo.value}")
