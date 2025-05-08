@@ -427,3 +427,59 @@ def test_update_task_in_read_only_mode(read_only_tasks_api_instance: TasksAPI, t
         api.update_task(task_to_update)
     assert "API is in read-only mode" in str(excinfo.value)
     print(f"Successfully asserted PermissionError when updating task in read-only mode: {excinfo.value}")
+
+
+def test_task_ical_roundtrip():
+    """
+    Test that the to_ical() → from_ical() roundtrip conversion works correctly,
+    and that from_ical() → to_ical() produces the same output.
+    This is a purely local test and should not interact with any server.
+    """
+    # Create a TaskData instance with various properties set
+    original_task = TaskData(
+        text="Test Task for iCal Roundtrip",
+        notes="These are some notes\nWith multiple lines\nAnd some special chars: ü, é, ñ",
+        due_date="20250101T120000Z",
+        start_date="20240101",  # Date only format
+        priority=1,
+        tags=["test", "important", "ical-roundtrip"],
+        percent_complete=50,
+        list_uid="test-list-uid-for-roundtrip",  # Required for from_ical
+    )
+    
+    # Add some X-properties
+    original_task.x_properties["X-CUSTOM-PROP"] = "test-value"
+    original_task.x_properties["X-ANOTHER-PROP"] = "another-value"
+    
+    # Get the iCal string
+    ical_string = original_task.to_ical()
+    print(f"Generated iCal string (first 200 chars):\n{ical_string[:200]}...")
+    
+    # Convert back to TaskData
+    roundtrip_task = TaskData.from_ical(ical_string, list_uid=original_task.list_uid)
+    
+    # Verify that key properties were preserved
+    assert roundtrip_task.uid == original_task.uid, "UID should be preserved"
+    assert roundtrip_task.text == original_task.text, "Text (SUMMARY) should be preserved"
+    assert roundtrip_task.notes == original_task.notes, "Notes (DESCRIPTION) should be preserved"
+    assert roundtrip_task.due_date == original_task.due_date, "DUE date should be preserved"
+    assert roundtrip_task.start_date == original_task.start_date, "DTSTART should be preserved"
+    assert roundtrip_task.priority == original_task.priority, "PRIORITY should be preserved"
+    assert set(roundtrip_task.tags) == set(original_task.tags), "CATEGORIES (tags) should be preserved"
+    assert roundtrip_task.percent_complete == original_task.percent_complete, "PERCENT-COMPLETE should be preserved"
+    
+    # Check X-properties preservation
+    for key, value in original_task.x_properties.items():
+        assert key in roundtrip_task.x_properties.get_raw_properties(), f"X-property {key} should be preserved"
+        assert roundtrip_task.x_properties[key] == value, f"X-property {key} value should be preserved"
+    
+    # Generate iCal string from the roundtrip task
+    second_ical_string = roundtrip_task.to_ical()
+    
+    # Compare generated iCal strings
+    # Note: Depending on implementation details, there might be minor formatting differences
+    # that don't affect the semantic content. If exact string comparison fails, a more
+    # sophisticated comparison might be needed.
+    assert second_ical_string == ical_string, "Double conversion (to_ical→from_ical→to_ical) should produce the same output"
+    
+    print("Successfully verified TaskData.to_ical() → from_ical() → to_ical() roundtrip")
