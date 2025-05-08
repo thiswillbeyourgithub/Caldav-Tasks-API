@@ -44,6 +44,17 @@ class TaskListData:
         """Allows iteration over the tasks in the task list."""
         return iter(self.tasks)
 
+    def to_dict(self) -> Dict:
+        """Converts the TaskListData instance to a dictionary."""
+        return {
+            "uid": self.uid,
+            "name": self.name,
+            "color": self.color,
+            "deleted": self.deleted,
+            "synced": self.synced,
+            "tasks": [task.to_dict() for task in self.tasks],
+        }
+
 
 class XProperties:
     """
@@ -234,6 +245,32 @@ class TaskData:
 
         ical += "END:VTODO\n"
         return ical
+
+    def to_dict(self) -> Dict:
+        """Converts the TaskData instance to a dictionary."""
+        data = {
+            "uid": self.uid,
+            "text": self.text,
+            "notes": self.notes,
+            "created_at": self.created_at,
+            "changed_at": self.changed_at,
+            "completed": self.completed,
+            "percent_complete": self.percent_complete,
+            "due_date": self.due_date,
+            "start_date": self.start_date,
+            "priority": self.priority,
+            "parent": self.parent,
+            "tags": self.tags,
+            "rrule": self.rrule,
+            "attachments": self.attachments,
+            "deleted": self.deleted,
+            "list_uid": self.list_uid,
+            "notified": self.notified,
+            "synced": self.synced,
+            "trash": self.trash,
+            "x_properties": self.x_properties.get_raw_properties(),
+        }
+        return data
 
     @staticmethod
     def from_ical(ical: str | bytes, list_uid: str) -> TaskData:
