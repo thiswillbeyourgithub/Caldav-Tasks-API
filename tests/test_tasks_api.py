@@ -181,6 +181,71 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
     print(f"Successfully created task '{created_task_on_server.text}' with UID '{created_task_on_server.uid}'")
 
 
+def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: str):
+    """
+    Test creating a new task, renaming it, and verifying the change.
+    The task is NOT deleted by this test.
+    """
+    api = tasks_api_instance
+
+    # Find the target test list
+    target_list: TaskListData | None = None
+    # Ensure data is loaded before searching for the list
+    api.load_remote_data()
+    for tl in api.task_lists:
+        if tl.name == test_list_name:
+            target_list = tl
+            break
+    
+    if not target_list:
+        pytest.skip(f"Test list '{test_list_name}' not found on the server. Skipping create/rename test.")
+
+    assert target_list.uid is not None, "Target list UID should not be None"
+    
+    # --- Create Task ---
+    initial_task_text = f"Initial Name - {uuid.uuid4()}"
+    task_to_create = TaskData(
+        text=initial_task_text,
+        list_uid=target_list.uid
+    )
+    
+    print(f"Attempting to create task '{initial_task_text}' in list '{target_list.name}' (UID: {target_list.uid})")
+    created_task_data = api.add_task(task_to_create, target_list.uid)
+    assert created_task_data is not None, "add_task should return the created task data."
+    assert created_task_data.uid, "Created task data should have a UID."
+    assert created_task_data.text == initial_task_text, "Created task text mismatch."
+    assert created_task_data.synced is True, "Created task should be marked as synced."
+    print(f"Successfully created task '{created_task_data.text}' with UID '{created_task_data.uid}'")
+
+    # --- Rename Task ---
+    renamed_task_text = f"Renamed Task - {uuid.uuid4()}"
+    task_to_update = created_task_data # Work with the instance returned by add_task
+    task_to_update.text = renamed_task_text
+    
+    print(f"Attempting to rename task UID '{task_to_update.uid}' to '{renamed_task_text}'")
+    updated_task_data = api.update_task(task_to_update)
+    assert updated_task_data is not None, "update_task should return the updated task data."
+    assert updated_task_data.uid == created_task_data.uid, "Updated task UID should match original."
+    assert updated_task_data.text == renamed_task_text, "Updated task text mismatch after update call."
+    assert updated_task_data.synced is True, "Updated task should be marked as synced."
+    print(f"Successfully called update_task for task UID '{updated_task_data.uid}'")
+
+    # --- Verify Rename on Server ---
+    api.load_remote_data() # Reload all data to ensure we see the server state
+    target_list_after_rename = api.get_task_list_by_uid(target_list.uid)
+    assert target_list_after_rename is not None, "Target list not found after reloading for rename verification."
+
+    renamed_task_on_server = None
+    for task in target_list_after_rename.tasks:
+        if task.uid == updated_task_data.uid:
+            renamed_task_on_server = task
+            break
+    
+    assert renamed_task_on_server is not None, f"Task UID '{updated_task_data.uid}' not found in list after rename."
+    assert renamed_task_on_server.text == renamed_task_text, f"Task text on server ('{renamed_task_on_server.text}') does not match expected renamed text ('{renamed_task_text}')."
+    print(f"Successfully verified renamed task '{renamed_task_on_server.text}' (UID: '{renamed_task_on_server.uid}') on server.")
+
+
 def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
     """
     Test the to_dict() method of TaskData for tasks in the designated test list.
