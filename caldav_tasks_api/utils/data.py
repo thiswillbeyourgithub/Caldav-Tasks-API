@@ -101,7 +101,16 @@ class XProperties:
 
     def __getitem__(self, key: str) -> str:
         """Retrieves the property using its original key. For dict-like access."""
-        return self._raw_properties[key]
+        try:
+            return self._raw_properties[key]
+        except KeyError:
+            # Case-insensitive lookup as fallback
+            key_lower = key.lower()
+            for raw_key, value in self._raw_properties.items():
+                if raw_key.lower() == key_lower:
+                    return value
+            # If we get here, the key really doesn't exist
+            raise KeyError(key)
 
     def get_raw_properties(self) -> Dict[str, str]:
         """Returns the underlying dictionary of raw X-properties."""
@@ -110,6 +119,21 @@ class XProperties:
     def items(self):
         """Allows iteration like a dictionary (e.g., for key, value in x_props.items())."""
         return self._raw_properties.items()
+        
+    def __contains__(self, key: str) -> bool:
+        """
+        Case-insensitive check if a key exists in the X-properties.
+        This is used for expressions like `key in x_properties`.
+        """
+        if key in self._raw_properties:
+            return True
+            
+        # Case-insensitive lookup
+        key_lower = key.lower()
+        for raw_key in self._raw_properties:
+            if raw_key.lower() == key_lower:
+                return True
+        return False
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._raw_properties!r})"
