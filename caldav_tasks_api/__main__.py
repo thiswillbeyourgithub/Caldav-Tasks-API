@@ -61,7 +61,7 @@ def get_api(url: Optional[str], username: Optional[str], password: Optional[str]
     )
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 def cli():
     """CalDAV Tasks API - Command-line interface for interacting with CalDAV task servers."""
     pass
