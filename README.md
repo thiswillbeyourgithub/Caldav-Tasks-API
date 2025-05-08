@@ -99,6 +99,7 @@ python -m caldav_tasks_api show_summary --list "Personal" "Work Project" --debug
 *   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True).
 *   `--list TEXT ...`: Specify one or more task list names or UIDs to load.
 *   `--debug / --no-debug`: Enable PDB post-mortem debugging and interactive console (default: False).
+*   `--json / --no-json`: Output summary information in JSON format (default: False).
 
 ### Python API
 
