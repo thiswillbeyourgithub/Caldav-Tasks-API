@@ -27,9 +27,10 @@ Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Rad
 *   Load task lists (calendars supporting VTODOs).
 *   Load tasks from specified lists, parsing standard iCalendar properties.
 *   Preserve and provide access to custom `X-` properties.
-*   Create new tasks (VTODOs) on the server.
-*   Delete tasks from the server.
-*   CLI for basic task list inspection.
+*   Create, update, and delete tasks (VTODOs) on the server.
+*   Read-only mode for applications that need to prevent modifications.
+*   Complete iCalendar (VTODO) roundtrip conversion.
+*   CLI for basic task list inspection with JSON output support.
 *   Debug mode for both CLI (interactive console) and API (PDB post-mortem).
 
 ## Installation
@@ -118,7 +119,8 @@ try:
         password="YOUR_PASSWORD", # or os.environ.get("CALDAV_PASSWORD")
         # nextcloud_mode=True,  # Default, adjust if not using Nextcloud
         # target_lists=["Personal", "Work"], # Optional: load only specific lists by name or UID
-        # debug=True # Optional: enable PDB for certain exceptions
+        # debug=True, # Optional: enable PDB for certain exceptions
+        # read_only=True, # Optional: prevent any modifications to the server
     )
 except ConnectionError as e:
     print(f"Failed to connect: {e}")
@@ -160,7 +162,7 @@ if api.task_lists:
         # x_properties={"X-CUSTOM-FIELD": "CustomValue"} # Can also pass a dict
     )
     # Or initialize XProperties directly
-    # new_task_data.x_properties = XProperties({"X-ANOTHER-PROP": "AnotherValue"})
+    new_task_data.x_properties["X-ANOTHER-PROP"] = "AnotherValue"
 
 
     try:
@@ -169,15 +171,25 @@ if api.task_lists:
         print(f"Successfully created task: '{created_task.text}' with UID: {created_task.uid} in list {target_list_uid}")
         print(f"Server assigned created_at: {created_task.created_at}, changed_at: {created_task.changed_at}")
 
-        # Example: Delete the task just created
+        # Example: Update the task we just created
+        print(f"\n--- Updating Task ---")
+        created_task.text = "Updated task title"
+        created_task.priority = 1  # Higher priority
+        updated_task = api.update_task(created_task)
+        print(f"Successfully updated task: '{updated_task.text}' with UID: {updated_task.uid}")
+        print(f"Server updated changed_at: {updated_task.changed_at}")
+
+        # Example: Delete the task
         # print(f"\n--- Deleting Task ---")
         # if api.delete_task(created_task.uid, target_list_uid):
         #     print(f"Successfully deleted task UID: {created_task.uid}")
         # else:
         #     print(f"Failed to delete task UID: {created_task.uid}")
 
+    except PermissionError as e:
+        print(f"Permission error: {e}")  # Will occur in read-only mode
     except ValueError as e:
-        print(f"Error adding/deleting task: {e}")
+        print(f"Error adding/updating/deleting task: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 else:
@@ -193,10 +205,14 @@ else:
 | Fetch Task Lists        | ✅ (`show_summary` command)              | ✅ (Tested in `test_tasks_api.py::test_fetch_task_lists`) | Loads names, UIDs, and associated tasks.                                                                                      |
 | Fetch Tasks             | ✅ (Displayed by `show_summary` command) | ✅ (Tested in `test_tasks_api.py::test_find_tasks_in_lists`) | Tasks are loaded as part of `TaskListData.tasks`. Includes details like summary, due date, status, X-properties, etc.             |
 | Create Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_delete_task`, `test_create_single_task`) | `TasksAPI.add_task()` creates a new VTODO on the server.                                                              |
-| Delete Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_delete_task`) | `TasksAPI.delete_task()` removes a VTODO by its UID from a specified list.                                                          |
 | Update Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_rename_task`) | `TasksAPI.update_task()` updates an existing VTODO on the server.                                                              |
-| Filter by Target Lists  | ✅ (`--list` option for `show_summary`)  | ✅ (Constructor argument `target_lists`) | Allows specifying list names or UIDs to operate on during initialization.                                                                                   |
-| Debug Mode              | ✅ (`--debug` option for `show_summary`) | ✅ (Constructor argument `debug`)      | CLI: Enables PDB post-mortem and interactive console. API: Enables PDB for certain exceptions during development.                                        |
+| Delete Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_delete_task`) | `TasksAPI.delete_task()` removes a VTODO by its UID from a specified list.                                                          |
+| JSON Output             | ✅ (`--json` option for all commands)     | ❌ (API returns Python objects)       | CLI can output JSON format for integration with other tools.                                                                        |
+| Read-Only Mode          | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_*_in_read_only_mode` tests) | When enabled, prevents any modifications to the server.                                                                           |
+| X-Property Handling     | ❌ (CLI displays but can't modify)        | ✅ (Tested in `test_tasks_api.py::test_create_update_xprop_delete_task`) | Preserves and provides flexible access to custom X-properties.                                                                    |
+| iCal Roundtrip          | ❌ (Not applicable to CLI)                | ✅ (Tested in `test_tasks_api.py::test_task_ical_roundtrip`) | Ensures consistent conversion to/from iCalendar format.                                                                            |
+| Filter by Target Lists  | ✅ (`--list` option for `show_summary`)  | ✅ (Constructor argument `target_lists`) | Allows specifying list names or UIDs to operate on during initialization.                                                           |
+| Debug Mode              | ✅ (`--debug` option for `show_summary`) | ✅ (Constructor argument `debug`)      | CLI: Enables PDB post-mortem and interactive console. API: Enables PDB for certain exceptions during development.                     |
 
 ## Handling of VTODO Properties (including X-Properties)
 
@@ -209,7 +225,9 @@ A key feature is the handling of non-standard properties, particularly those pre
 *   **Access:** The `XProperties` class offers flexible access:
     *   **Dictionary-like access:** You can get/set properties using their original, raw keys (e.g., `task.x_properties['X-APPLE-SORT-ORDER']`).
     *   **Attribute-style access:** For convenience, `X-` properties can be accessed using normalized attribute names. The `X-` prefix is removed, and hyphens are converted to underscores (e.g., `task.x_properties.apple_sort_order`). This is case-insensitive on the query.
-*   **Round-Tripping:** When a `TaskData` object is converted back to an iCalendar string (via `to_ical()`), all stored `X-` properties are included with their original keys. This ensures that custom data is not lost if a task is read, potentially modified (though full update logic is advanced), and then intended to be saved back.
+    *   **Containment checking:** The `in` operator is supported for case-insensitive key checking (e.g., `if 'X-APPLE-SORT-ORDER' in task.x_properties:`).
+*   **Round-Tripping:** When a `TaskData` object is converted back to an iCalendar string (via `to_ical()`), all stored `X-` properties are included with their original keys. This ensures that custom data is not lost during iCal conversion.
+*   **Dictionary conversion:** Both TaskData and TaskListData objects support conversion to dictionaries via the `to_dict()` method, which properly handles the conversion of X-properties.
 
 This robust handling of `X-` properties is crucial for interoperability and for ensuring that application-specific metadata managed by clients like Tasks.org is not inadvertently discarded.
 
@@ -228,6 +246,30 @@ The primary methods that trigger uploads are:
 The `TasksAPI.load_remote_data()` method, on the other hand, is responsible for *downloading* task lists and tasks from the server to your local `TasksAPI` instance. It does not upload any local changes.
 
 In summary, uploads are explicit operations you initiate by calling `add_task`, `update_task`, or `delete_task`.
+
+**Q: What is the read-only mode and when should I use it?**
+
+A: The read-only mode (`read_only=True` when initializing `TasksAPI`) prevents any modifications to the server. When enabled:
+
+* `add_task()`, `update_task()`, and `delete_task()` will raise a `PermissionError` if called
+* All data retrieval methods function normally
+* `load_remote_data()` works as usual to fetch tasks
+
+This mode is useful for:
+
+* Applications that need to display tasks but shouldn't modify them
+* Preventing accidental modifications during development
+* Creating monitoring or reporting tools that need task data but should never change it
+
+To enable read-only mode, simply add the parameter when initializing the API:
+```python
+api = TasksAPI(
+    url="YOUR_CALDAV_URL",
+    username="YOUR_USERNAME",
+    password="YOUR_PASSWORD",
+    read_only=True
+)
+```
 
 ## Contributing
 
