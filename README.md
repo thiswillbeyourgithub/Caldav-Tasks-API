@@ -199,20 +199,34 @@ else:
 
 ## Supported Operations & Testing Status
 
-| Feature                 | CLI | API | Description                                                           |
-| ----------------------- | --- | --- | --------------------------------------------------------------------- |
-| Connect to Server       | ✅  | ✅  | Connect using credentials via args or environment variables           |
-| Fetch Task Lists        | ✅  | ✅  | Load calendar lists that support tasks (VTODOs)                       |
-| Fetch Tasks             | ✅  | ✅  | Retrieve tasks with details (summary, due date, status, etc.)         |
-| Create Task             | ❌  | ✅  | Create new tasks on the server                                        |
-| Update Task             | ❌  | ✅  | Modify existing tasks                                                 |
-| Delete Task             | ❌  | ✅  | Remove tasks from the server                                          |
-| JSON Output             | ✅  | ❌  | Format output as JSON for CLI commands                                |
-| Read-Only Mode          | ❌  | ✅  | Prevent modifications to the server                                   |
-| X-Property Handling     | ❌  | ✅  | Support for custom task properties                                    |
-| iCal Roundtrip          | ❌  | ✅  | Consistent conversion to/from iCalendar format                        |
-| Filter by Target Lists  | ✅  | ✅  | Specify which lists to operate on                                     |
-| Debug Mode              | ✅  | ✅  | Enable debugging tools for troubleshooting                            |
+### Python API Features
+
+| Feature                 | Status | Description                                                           |
+| ----------------------- | ------ | --------------------------------------------------------------------- |
+| Connect to Server       | ✅     | Connect using credentials via constructor or environment variables    |
+| Fetch Task Lists        | ✅     | Load calendar lists that support tasks (VTODOs)                       |
+| Fetch Tasks             | ✅     | Retrieve tasks with details (summary, due date, status, etc.)         |
+| Create Task             | ✅     | Create new tasks on the server                                        |
+| Update Task             | ✅     | Modify existing tasks                                                 |
+| Delete Task             | ✅     | Remove tasks from the server                                          |
+| Read-Only Mode          | ✅     | Prevent modifications to the server                                   |
+| X-Property Handling     | ✅     | Support for custom task properties                                    |
+| iCal Roundtrip          | ✅     | Consistent conversion to/from iCalendar format                        |
+| Filter by Target Lists  | ✅     | Specify which lists to operate on                                     |
+| Debug Mode              | ✅     | Enable PDB for certain exceptions                                     |
+
+### Command-Line Interface Features
+
+**Note: The CLI is always in read-only mode and cannot modify tasks on the server.**
+
+| Feature                 | Status | Description                                                           |
+| ----------------------- | ------ | --------------------------------------------------------------------- |
+| Connect to Server       | ✅     | Connect using credentials via args or environment variables           |
+| Fetch Task Lists        | ✅     | Load calendar lists that support tasks (VTODOs)                       |
+| Fetch Tasks             | ✅     | Retrieve tasks with details (summary, due date, status, etc.)         |
+| JSON Output             | ✅     | Format output as JSON for CLI commands                                |
+| Filter by Target Lists  | ✅     | Specify which lists to operate on                                     |
+| Debug Mode              | ✅     | Enable interactive console for troubleshooting                        |
 
 ## Handling of VTODO Properties (including X-Properties)
 
