@@ -1,164 +1,131 @@
 """
 CLI entry point for the Tasks API.
 
-This module uses the `fire` library to expose functionalities of the TasksAPI
+This module uses the `click` library to expose functionalities of the TasksAPI
 as command-line interface commands.
 """
 
-import fire
 import os
-import json # For JSON output
-# import pprint as pp # No longer used
+import json
 import code  # For interactive debugging
-from typing import List, Optional  # For type hinting
+from typing import List, Optional
 
-from loguru import logger # Import logger
+import click
+from loguru import logger
 
-from .caldav_tasks_api import TasksAPI  # Assuming tasks_api.py is in the same package
-# Ensure logging is configured if this module is run directly or imported before package __init__
-# from . import logging_config # This is now handled by package __init__
+from .caldav_tasks_api import TasksAPI
 
 
-class CliCommands:
+def get_api(url: Optional[str], username: Optional[str], password: Optional[str], 
+            nextcloud_mode: bool, debug: bool, target_lists: Optional[List[str]]) -> TasksAPI:
     """
-    A CLI for interacting with the TasksAPI.
-
-    Credentials (url, username, password) can be provided as arguments
-    or loaded from CALDAV_URL, CALDAV_USERNAME, CALDAV_PASSWORD environment variables.
+    Initializes and returns the TasksAPI instance.
+    Validates credentials and raises appropriate errors.
     """
+    # Get credentials from args or environment
+    url = url or os.environ.get("CALDAV_URL")
+    username = username or os.environ.get("CALDAV_USERNAME")
+    password = password or os.environ.get("CALDAV_PASSWORD")
+    
+    # Validate credentials
+    if not url:
+        logger.error("CalDAV server URL not provided.")
+        raise click.UsageError(
+            "CalDAV server URL must be provided via --url option or CALDAV_URL environment variable."
+        )
+    if not username:
+        logger.error("CalDAV username not provided.")
+        raise click.UsageError(
+            "CalDAV username must be provided via --username option or CALDAV_USERNAME environment variable."
+        )
+    if not password:
+        logger.error("CalDAV password not provided.")
+        raise click.UsageError(
+            "CalDAV password must be provided via --password option or CALDAV_PASSWORD environment variable."
+        )
+    
+    logger.debug("Credentials validated successfully.")
+    logger.info(f"Initializing TasksAPI for CalDAV server at: {url}")
+    
+    return TasksAPI(
+        url=url,
+        username=username,
+        password=password,
+        nextcloud_mode=nextcloud_mode,
+        debug=debug,
+        target_lists=target_lists,
+        read_only=True,  # CLI usage of TasksAPI is read-only by default
+    )
 
-    def __init__(
-        self,
-        url: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        nextcloud_mode: bool = True,
-        debug: bool = False,
-        list: Optional[List[str]] = None,
-        json: bool = False,  # Added json flag
-    ):  # Added 'list' argument
-        """
-        Initializes the CLI commands.
 
-        Args:
-            url: The base URL of the CalDAV server. Defaults to CALDAV_URL env var.
-            username: The username for authentication. Defaults to CALDAV_USERNAME env var.
-            password: The password for authentication. Defaults to CALDAV_PASSWORD env var.
-            nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
-            debug: If True, enables PDB post-mortem debugging and interactive console.
-            list: Optional list of task list names or UIDs to load.
-            json: If True, output the summary as JSON.
-        """
-        self._url = url or os.environ.get("CALDAV_URL")
-        self._username = username or os.environ.get("CALDAV_USERNAME")
-        self._password = password or os.environ.get("CALDAV_PASSWORD")
-        self._nextcloud_mode = nextcloud_mode
-        self._debug = debug  # Store the debug flag
-        self._target_lists = list  # Store the target lists
-        self._json_output = json # Store the json output flag
-
-        self._api: TasksAPI | None = None
-        logger.debug(f"CliCommands initialized with url: {'***' if self._url else None}, user: {self._username}, nc_mode: {self._nextcloud_mode}, debug: {self._debug}, lists: {self._target_lists}, json: {self._json_output}")
+@click.group()
+def cli():
+    """CalDAV Tasks API - Command-line interface for interacting with CalDAV task servers."""
+    pass
 
 
-    def _validate_credentials(self) -> None:
-        """Checks if necessary credentials are set."""
-        if not self._url:
-            logger.error("CalDAV server URL not provided.")
-            raise ValueError(
-                "CalDAV server URL must be provided via --url argument or CALDAV_URL environment variable."
+@cli.command()
+@click.option('--url', help='CalDAV server URL (or set CALDAV_URL env var)')
+@click.option('--username', help='CalDAV username (or set CALDAV_USERNAME env var)')
+@click.option('--password', help='CalDAV password (or set CALDAV_PASSWORD env var)')
+@click.option('--nextcloud-mode/--no-nextcloud-mode', default=True, 
+              help='Adjust URL for Nextcloud specific path [default: enabled]')
+@click.option('--debug/--no-debug', default=False, 
+              help='Enable debug mode with interactive console [default: disabled]')
+@click.option('--list', '-l', multiple=True, help='Filter by task list name or UID (can use multiple times)')
+@click.option('--json/--no-json', 'json_output', default=False, 
+              help='Output summary as JSON [default: disabled]')
+def show_summary(url, username, password, nextcloud_mode, debug, list, json_output):
+    """Connect to CalDAV server and show a summary of all task lists and tasks."""
+    target_lists = list if list else None
+    logger.debug(f"CLI initialized with url: {'***' if url else 'from env'}, "
+                f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
+                f"debug: {debug}, lists: {target_lists}, json: {json_output}")
+    
+    try:
+        api = get_api(url, username, password, nextcloud_mode, debug, target_lists)
+        logger.info("Loading remote tasks...")
+        api.load_remote_data()
+
+        if json_output:
+            # Prepare data for JSON output
+            output_data = [tl.to_dict() for tl in api.task_lists]
+            click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
+            return  # Exit after printing JSON
+
+        # Standard summary logging
+        click.echo("--- Summary ---")
+        click.echo(f"Total Task Lists loaded: {len(api.task_lists)}")
+        total_tasks_count = 0
+        
+        for tl in api.task_lists:
+            click.echo(
+                f"  List: '{tl.name}' (UID: {tl.uid}, Color: {tl.color}) - Tasks: {len(tl.tasks)}"
             )
-        if not self._username:
-            logger.error("CalDAV username not provided.")
-            raise ValueError(
-                "CalDAV username must be provided via --username argument or CALDAV_USERNAME environment variable."
-            )
-        if not self._password:
-            logger.error("CalDAV password not provided.")
-            # For password, we might allow it to be prompted for interactively in a real CLI,
-            # but for now, require it via arg or env var.
-            raise ValueError(
-                "CalDAV password must be provided via --password argument or CALDAV_PASSWORD environment variable."
-            )
-        logger.debug("Credentials validated successfully.")
+            total_tasks_count += len(tl.tasks)
 
-    def _get_api(self) -> TasksAPI:
-        """
-        Initializes and returns the TasksAPI instance.
-        Raises ValueError if credentials are not set.
-        """
-        self._validate_credentials()  # Ensure credentials are set before trying to connect
+        click.echo(f"Total Tasks loaded: {total_tasks_count}")
 
-        if self._api is None:
-            logger.info(f"Initializing TasksAPI for CalDAV server at: {self._url}")
-            self._api = TasksAPI(
-                url=self._url,  # type: ignore
-                username=self._username,  # type: ignore
-                password=self._password,  # type: ignore
-                nextcloud_mode=self._nextcloud_mode,
-                debug=self._debug,  # Pass the debug flag to TasksAPI
-                target_lists=self._target_lists,  # Pass the target lists
-                read_only=True,  # CLI usage of TasksAPI is read-only by default
-            )
-        return self._api
+        if debug:
+            click.echo("Debug mode: Starting interactive console. API available as 'api'.")
+            click.echo("Variables available: api, locals()")
+            # Expose api to the interactive console
+            _globals = globals().copy()
+            _locals = locals().copy()
+            _globals.update(_locals)  # Make local variables accessible
+            code.interact(local=_globals)
 
-    def show_summary(self) -> None:
-        """
-        Connects to the CalDAV server, loads all task lists and tasks,
-        and prints a summary.
-        """
-        try:
-            api = self._get_api()
-            logger.info("Loading remote tasks...") # Keep this log for user feedback even with JSON
-            api.load_remote_data()
-
-            if self._json_output:
-                # Prepare data for JSON output
-                output_data = [tl.to_dict() for tl in api.task_lists]
-                print(json.dumps(output_data, ensure_ascii=False, indent=2))
-                return # Exit after printing JSON
-
-            # Existing summary logging
-            logger.info("--- Summary ---")
-            logger.info(f"Total Task Lists loaded: {len(api.task_lists)}")
-            total_tasks_count = 0
-            for tl in api.task_lists:
-                # tasks_in_list = api.get_tasks_by_list_uid(tl.uid) # This still works
-                # Or directly access tl.tasks
-                logger.info(
-                    f"  List: '{tl.name}' (UID: {tl.uid}, Color: {tl.color}) - Tasks: {len(tl.tasks)}"
-                )
-                total_tasks_count += len(tl.tasks)
-
-            logger.info(f"Total Tasks loaded: {total_tasks_count}")
-
-            if self._debug: # Interactive console should not run if JSON output is requested
-                logger.info(
-                    "Debug mode: Starting interactive console. API available as 'api'."
-                )
-                logger.info("Variables available: api, self (CliCommands instance), locals()")
-                # Expose api and self to the interactive console
-                # Also, all local variables of show_summary will be available.
-                _globals = globals().copy()
-                _locals = locals().copy()
-                _globals.update(_locals)  # Make local variables accessible
-                code.interact(local=_globals)
-
-        except ConnectionError as ce:
-            logger.error(f"Connection failed: {ce}")
-        except ValueError as ve:  # For missing credentials or other value errors
-            logger.error(f"Configuration error: {ve}")
-        except Exception as e:
-            logger.exception(f"An unexpected error occurred: {e}")
+    except click.UsageError as ue:
+        click.echo(f"Configuration error: {ue}", err=True)
+        raise click.Abort()
+    except ConnectionError as ce:
+        click.echo(f"Connection failed: {ce}", err=True)
+        raise click.Abort()
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {e}")
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
 
 
 if __name__ == "__main__":
-    # Note: If this script is run directly, logging_config might not have been initialized
-    # if caldav_tasks_api package wasn't imported first.
-    # However, our __init__.py handles this.
-    # For robustness, one could add:
-    # try:
-    #     from . import logging_config
-    # except ImportError: # If run as top-level script and not as part of package
-    #     import logging_config # This would only work if logging_config.py is in PYTHONPATH
-    fire.Fire(CliCommands)
+    cli()

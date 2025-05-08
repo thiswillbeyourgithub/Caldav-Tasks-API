@@ -11,11 +11,10 @@ setup(
     packages=find_packages(include=['caldav_tasks_api', 'caldav_tasks_api.*']),
     install_requires=[
         "caldav>=1.4.0",
-        # "click>=8.1.8", # Removing click as fire is used
+        "click>=8.1.8",
         "urllib3>=2.4.0",
         "loguru>=0.7.0",
         "platformdirs>=3.0.0",
-        "fire>=0.5.0", # Add fire as it's used in __main__.py
     ],
     extras_require={
         "dev": [
@@ -29,7 +28,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "caldav-tasks-api-cli=caldav_tasks_api.__main__:CliCommands", # fire can expose classes directly
+            "caldav-tasks-api-cli=caldav_tasks_api.__main__:cli",
         ],
     },
     classifiers=[
