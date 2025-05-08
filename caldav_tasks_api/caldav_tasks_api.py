@@ -522,7 +522,8 @@ class TasksAPI:
                 # For text, ALWAYS keep our requested change regardless of server response
                 # This is because some CalDAV servers don't properly reflect text changes
                 logger.debug(f"Preserving our original requested text: '{original_text}'")
-                # Don't update task_data.text from server response
+                # Explicitly restore our original text instead of using server response
+                task_data.text = original_text
                 
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
