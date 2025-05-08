@@ -337,6 +337,9 @@ class TasksAPI:
             logger.error(f"Task list (calendar) with UID '{list_uid}' not found for adding task.")
             raise ValueError(f"Task list (calendar) with UID '{list_uid}' not found.")
 
+        # Save the desired text that we want to preserve from the client side
+        desired_text = task_data.text
+        
         vtodo_ical_string = task_data.to_ical()
         logger.debug(
             f"  Attempting to save new VTODO to calendar '{target_raw_calendar.name}':\n{vtodo_ical_string[:200]}..."
