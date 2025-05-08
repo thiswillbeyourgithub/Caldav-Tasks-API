@@ -28,7 +28,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "caldav-tasks-api-cli=caldav_tasks_api.__main__:cli",
+            "caldav-tasks-api=caldav_tasks_api.__main__:cli",
         ],
     },
     classifiers=[
