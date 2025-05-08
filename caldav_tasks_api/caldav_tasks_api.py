@@ -1,6 +1,7 @@
 import pdb
 import urllib3
 import caldav
+import datetime # Added for updating timestamps
 from caldav import DAVClient, Principal, Calendar, Todo
 from caldav.elements import dav, ical
 from icalendar import Calendar as IcsCalendar  # For fallback parsing
@@ -418,5 +419,121 @@ class TasksAPI:
             )
             if self.debug:
                 logger.error("Debug mode: Entering PDB for delete_task error.")
+                pdb.post_mortem()
+            raise
+
+    def update_task(self, task_data: TaskData) -> TaskData:
+        """
+        Updates an existing task on the server.
+        The provided task_data object should have its fields already modified.
+        Its changed_at timestamp will be updated before sending.
+        """
+        logger.info(f"Attempting to update task UID '{task_data.uid}' in list UID '{task_data.list_uid}'.")
+
+        if not task_data.uid:
+            logger.error("Task UID is missing. Cannot update task.")
+            raise ValueError("TaskData must have a UID to be updated.")
+        if not task_data.list_uid:
+            logger.error(f"Task list UID is missing for task '{task_data.uid}'. Cannot update task.")
+            raise ValueError("TaskData must have a list_uid to be updated.")
+
+        # Update the 'changed_at' timestamp before generating iCal
+        task_data.changed_at = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y%m%dT%H%M%SZ"
+        )
+        # Ensure percent_complete is consistent if completed
+        if task_data.completed and task_data.percent_complete < 100:
+            task_data.percent_complete = 100
+        elif not task_data.completed and task_data.percent_complete == 100:
+            # If un-completing, perhaps reset percent_complete or leave as is,
+            # depending on desired logic. For now, let's assume it might be set to non-100 manually.
+            pass
+
+
+        if not self.raw_calendars:
+            logger.debug("Raw calendars not loaded, fetching them before updating task.")
+            self._fetch_raw_calendars()
+
+        target_raw_calendar: Optional[Calendar] = None
+        for cal in self.raw_calendars:
+            if str(cal.id) == task_data.list_uid:
+                target_raw_calendar = cal
+                logger.debug(f"Found target calendar '{cal.name}' (ID: {cal.id}) for task update.")
+                break
+
+        if not target_raw_calendar:
+            logger.error(
+                f"Task list (calendar) with UID '{task_data.list_uid}' not found for task update."
+            )
+            task_data.synced = False
+            raise ValueError(
+                f"Task list (calendar) with UID '{task_data.list_uid}' not found for update."
+            )
+
+        try:
+            server_task_obj: Todo = target_raw_calendar.todo_by_uid(task_data.uid)
+            logger.debug(
+                f"  Found VTODO by UID '{task_data.uid}' (URL: {server_task_obj.url}) in calendar '{target_raw_calendar.name}'."
+            )
+
+            updated_ical_string = task_data.to_ical()
+            logger.debug(
+                f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
+            )
+
+            server_task_obj.data = updated_ical_string
+            server_task_obj.save()
+            logger.info(
+                f"    Successfully saved updated VTODO UID '{task_data.uid}'."
+            )
+
+            # Re-parse data from server response to get authoritative fields (e.g., LAST-MODIFIED)
+            if server_task_obj.data:
+                logger.debug("Re-parsing task data from server response after update.")
+                refreshed_task_data = TaskData.from_ical(
+                    server_task_obj.data, list_uid=task_data.list_uid
+                )
+                
+                # Update the original task_data instance with server-authoritative values
+                task_data.uid = refreshed_task_data.uid # Should be the same
+                task_data.text = refreshed_task_data.text
+                task_data.notes = refreshed_task_data.notes
+                task_data.created_at = refreshed_task_data.created_at
+                task_data.changed_at = refreshed_task_data.changed_at # Server's LAST-MODIFIED
+                task_data.completed = refreshed_task_data.completed
+                task_data.percent_complete = refreshed_task_data.percent_complete
+                task_data.due_date = refreshed_task_data.due_date
+                task_data.start_date = refreshed_task_data.start_date
+                task_data.priority = refreshed_task_data.priority
+                task_data.parent = refreshed_task_data.parent
+                task_data.tags = refreshed_task_data.tags
+                task_data.rrule = refreshed_task_data.rrule
+                task_data.x_properties = refreshed_task_data.x_properties # Ensure XProperties are updated
+
+                task_data.synced = True
+                logger.debug(f"  Task data UID '{task_data.uid}' updated and synced with server response.")
+            else:
+                # This case should ideally not happen if save() was successful and server returns content
+                logger.warning("  Server did not return data for the updated task. Marking as synced, but local data might not reflect server's exact state for LAST-MODIFIED.")
+                task_data.synced = True
+
+
+            return task_data
+
+        except caldav.lib.error.NotFoundError:
+            logger.error(
+                f"    Task with UID '{task_data.uid}' not found in calendar '{target_raw_calendar.name}' for update."
+            )
+            task_data.synced = False
+            raise ValueError(
+                f"Task with UID '{task_data.uid}' not found in list '{task_data.list_uid}' for update."
+            )
+        except Exception as e:
+            logger.error(
+                f"    Error updating VTODO UID '{task_data.uid}' in calendar '{target_raw_calendar.name}': {e}", exc_info=True
+            )
+            task_data.synced = False # Ensure synced is false on error
+            if self.debug:
+                logger.error("Debug mode: Entering PDB for update_task error.")
                 pdb.post_mortem()
             raise
