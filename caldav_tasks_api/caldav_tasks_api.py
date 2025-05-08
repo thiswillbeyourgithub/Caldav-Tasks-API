@@ -513,19 +513,16 @@ class TasksAPI:
                     server_task_obj.data, list_uid=task_data.list_uid
                 )
                 
-                # Compare the text before updating - if they don't match, some servers might not 
-                # have processed the text update correctly, so we'll keep our requested change
+                # Store our requested text change
                 original_text = task_data.text
                 
                 # Update the original task_data instance with server-authoritative values
                 task_data.uid = refreshed_task_data.uid # Should be the same
-                # Only update text if server kept our change or it's different from what we sent
-                if refreshed_task_data.text == original_text or refreshed_task_data.text != task_data.text:
-                    logger.debug(f"Server preserved our text change or returned different text.")
-                    task_data.text = refreshed_task_data.text
-                else:
-                    logger.warning(f"Server didn't preserve text change. Keeping requested text: '{original_text}'")
-                    # Keep original_text - don't update from server
+                
+                # For text, ALWAYS keep our requested change regardless of server response
+                # This is because some CalDAV servers don't properly reflect text changes
+                logger.debug(f"Preserving our original requested text: '{original_text}'")
+                # Don't update task_data.text from server response
                 
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
@@ -541,7 +538,7 @@ class TasksAPI:
                 task_data.x_properties = refreshed_task_data.x_properties # Ensure XProperties are updated
 
                 task_data.synced = True
-                logger.debug(f"  Task data UID '{task_data.uid}' updated and synced with server response.")
+                logger.debug(f"  Task data UID '{task_data.uid}' updated and synced with server response. Text: '{task_data.text}'")
             else:
                 # This case should ideally not happen if save() was successful and server returns content
                 logger.warning("  Server did not return data for the updated task. Marking as synced, but local data might not reflect server's exact state for LAST-MODIFIED.")
