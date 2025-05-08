@@ -11,9 +11,12 @@ from . import logging_config # This will run setup_logging()
 from .caldav_tasks_api import TasksAPI
 from .utils.data import TaskData, TaskListData
 
+VERSION = TasksAPI.VERSION
+
 __all__ = [
     "TasksAPI",
     "TaskData",
     "TaskListData",
     "logging_config", # Optionally expose logger or config
+    "VERSION",
 ]

@@ -17,6 +17,9 @@ from .utils.data import (
 
 
 class TasksAPI:
+
+    VERSION: str = "1.0.0"
+
     def __init__(
         self,
         url: str,
