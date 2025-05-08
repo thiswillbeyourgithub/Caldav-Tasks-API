@@ -3,6 +3,9 @@ CLI entry point for the Tasks API.
 
 This module uses the `click` library to expose functionalities of the TasksAPI
 as command-line interface commands.
+
+Can be run directly using:
+    python -m caldav_tasks_api
 """
 
 import os
