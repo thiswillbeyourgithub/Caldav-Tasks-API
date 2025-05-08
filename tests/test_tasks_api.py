@@ -313,8 +313,8 @@ def test_cli_show_summary_json_runs_successfully(caldav_credentials):
         sys.executable,  # Path to current python interpreter
         "-m",
         "caldav_tasks_api",
-        "--json", # Global option for json output
-        "show_summary" # The command to run
+        "show_summary", # The command to run
+        "--json" # Command-specific option for json output
     ]
     
     print(f"Running CLI command: {' '.join(command)}")
