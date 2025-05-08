@@ -133,6 +133,23 @@ class XProperties:
         for raw_key in self._raw_properties:
             if raw_key.lower() == key_lower:
                 return True
+                
+        # Handle the case where the prefix (X-...) is the same but the UUID part differs in case
+        # Many servers might normalize the UUID part to all uppercase or all lowercase
+        parts = key.split('-', 2)  # Split on first two hyphens (e.g., X-TEST-PROP-uuid)
+        if len(parts) >= 3:
+            prefix = '-'.join(parts[0:2])  # X-TEST
+            uuid_part = parts[2]  # PROP-uuid
+            
+            for raw_key in self._raw_properties:
+                raw_parts = raw_key.split('-', 2)
+                if len(raw_parts) >= 3:
+                    raw_prefix = '-'.join(raw_parts[0:2])
+                    raw_uuid_part = raw_parts[2]
+                    
+                    if prefix.lower() == raw_prefix.lower() and uuid_part.lower() == raw_uuid_part.lower():
+                        return True
+                        
         return False
 
     def __repr__(self) -> str:

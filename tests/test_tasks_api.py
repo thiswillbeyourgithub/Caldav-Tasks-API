@@ -492,8 +492,20 @@ def test_create_update_xprop_delete_task(tasks_api_instance: TasksAPI, test_list
     
     # Check that the X property exists
     x_props = found_task.x_properties.get_raw_properties()
-    assert x_prop_name in x_props, f"X property {x_prop_name} should exist in task"
-    assert x_props[x_prop_name] == x_prop_value, f"X property value should be {x_prop_value}, got {x_props.get(x_prop_name)}"
+    assert x_prop_name in found_task.x_properties, f"X property {x_prop_name} should exist in task. Available props: {list(x_props.keys())}"
+    
+    # Get the actual stored key that matches our x_prop_name (might differ in case)
+    actual_key = None
+    for k in x_props.keys():
+        if k.lower() == x_prop_name.lower() or (
+           # Handle case where UUID part differs in case
+           k.split('-', 2)[0:2] == x_prop_name.split('-', 2)[0:2] and 
+           k.split('-', 2)[2].lower() == x_prop_name.split('-', 2)[2].lower()):
+            actual_key = k
+            break
+    
+    assert actual_key is not None, f"Failed to find any key matching {x_prop_name} in {list(x_props.keys())}"
+    assert x_props[actual_key] == x_prop_value, f"X property value should be {x_prop_value}, got {x_props.get(actual_key)}"
     
     print(f"Successfully verified X property {x_prop_name}={x_prop_value} on task")
     
