@@ -491,10 +491,14 @@ class TasksAPI:
                 f"  Found VTODO by UID '{task_data.uid}' (URL: {server_task_obj.url}) in calendar '{target_raw_calendar.name}'."
             )
 
+            # Save the original text for debugging
+            original_text = task_data.text
+            
             updated_ical_string = task_data.to_ical()
             logger.debug(
                 f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
             )
+            logger.debug(f"  Text being updated: '{original_text}'")
 
             server_task_obj.data = updated_ical_string
             server_task_obj.save()
@@ -509,9 +513,20 @@ class TasksAPI:
                     server_task_obj.data, list_uid=task_data.list_uid
                 )
                 
+                # Compare the text before updating - if they don't match, some servers might not 
+                # have processed the text update correctly, so we'll keep our requested change
+                original_text = task_data.text
+                
                 # Update the original task_data instance with server-authoritative values
                 task_data.uid = refreshed_task_data.uid # Should be the same
-                task_data.text = refreshed_task_data.text
+                # Only update text if server kept our change or it's different from what we sent
+                if refreshed_task_data.text == original_text or refreshed_task_data.text != task_data.text:
+                    logger.debug(f"Server preserved our text change or returned different text.")
+                    task_data.text = refreshed_task_data.text
+                else:
+                    logger.warning(f"Server didn't preserve text change. Keeping requested text: '{original_text}'")
+                    # Keep original_text - don't update from server
+                
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
                 task_data.changed_at = refreshed_task_data.changed_at # Server's LAST-MODIFIED
