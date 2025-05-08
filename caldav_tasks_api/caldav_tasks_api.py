@@ -494,13 +494,19 @@ class TasksAPI:
             # Save the desired text that we want to preserve from the client side
             desired_text = task_data.text
             
+            # Ensure text is correctly set before generating iCal
+            logger.debug(f"  Setting task text to: '{desired_text}'")
+            task_data.text = desired_text
+            
             updated_ical_string = task_data.to_ical()
             logger.debug(
                 f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
             )
-            logger.debug(f"  Text being updated: '{desired_text}'")
-            logger.debug(f"  Text being updated: '{desired_text}'")
-
+            
+            # Double-check that the iCal contains our text
+            if desired_text not in updated_ical_string:
+                logger.warning(f"  Warning: Desired text '{desired_text}' not found in generated iCal. This might cause update issues.")
+            
             server_task_obj.data = updated_ical_string
             server_task_obj.save()
             logger.info(
@@ -519,9 +525,16 @@ class TasksAPI:
                 
                 # For text, ALWAYS keep our requested change regardless of server response
                 # This is because some CalDAV servers don't properly reflect text changes
-                logger.debug(f"Preserving our desired text: '{desired_text}'")
+                logger.debug(f"Preserving our desired text: '{desired_text}' instead of server response text: '{refreshed_task_data.text}'")
+                
                 # Explicitly restore our desired text instead of using server response
                 task_data.text = desired_text
+                
+                # Double-check that the text was actually set
+                if task_data.text != desired_text:
+                    logger.error(f"  Failed to preserve text '{desired_text}'! Current value: '{task_data.text}'")
+                    # Force it again for safety
+                    task_data.text = desired_text
                 
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
