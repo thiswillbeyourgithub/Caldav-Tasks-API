@@ -12,4 +12,4 @@ push = false
 [bumpver.file_patterns]
 "bumpver.toml" = ['current_version = "{version}"']
 "setup.py" = ['version="{version}"']
-"caldav-tasks-api/caldav-tasks-api.py" = ['VERSION: str = "{version}"']
+"caldav_tasks_api/caldav_tasks_api.py" = ['VERSION: str = "{version}"']
