@@ -43,3 +43,22 @@ def test_list_name():
     if not name:
         pytest.skip("CALDAV_TASKS_API_TEST_LIST_NAME environment variable not set. Skipping create/delete tests.")
     return name
+
+@pytest.fixture(scope="session")
+def read_only_tasks_api_instance(caldav_credentials):
+    """Fixture to provide an initialized TasksAPI instance in read-only mode."""
+    try:
+        api = TasksAPI(
+            url=caldav_credentials["url"],
+            username=caldav_credentials["username"],
+            password=caldav_credentials["password"],
+            nextcloud_mode=True,  # Assuming Nextcloud mode for tests
+            read_only=True  # Initialize in read-only mode
+        )
+        # Load data for read-only instance as well, so it has lists/tasks to "attempt" to modify
+        api.load_remote_data() 
+        return api
+    except ConnectionError as e:
+        pytest.fail(f"Failed to connect to CalDAV server for read_only_tasks_api_instance: {e}")
+    except Exception as e:
+        pytest.fail(f"An unexpected error occurred during read_only_tasks_api_instance initialization: {e}")
