@@ -35,7 +35,9 @@ def setup_logging():
     app_author = "thiswillbeyourgithub" # As per your setup.py author (or a generic org name)
     
     try:
-        log_file_dir = Path(user_log_dir(app_name, app_author, roaming=False, ensure_exists=True))
+        log_file_dir = Path(user_log_dir(app_name, app_author))
+        # Ensure directory exists
+        log_file_dir.mkdir(parents=True, exist_ok=True)
         log_file_path = log_file_dir / "app.log"
 
         logger.add(
