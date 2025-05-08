@@ -433,6 +433,82 @@ def test_update_task_in_read_only_mode(read_only_tasks_api_instance: TasksAPI, t
     print(f"Successfully asserted PermissionError when updating task in read-only mode: {excinfo.value}")
 
 
+def test_create_update_xprop_delete_task(tasks_api_instance: TasksAPI, test_list_name: str):
+    """
+    Test creating a task, adding an X property, then deleting the task.
+    This test verifies that X properties can be properly stored and retrieved.
+    """
+    api = tasks_api_instance
+
+    # Find the target test list
+    target_list: TaskListData | None = None
+    for tl in api.task_lists:
+        if tl.name == test_list_name:
+            target_list = tl
+            break
+    
+    if not target_list:
+        pytest.skip(f"Test list '{test_list_name}' not found on the server. Skipping test.")
+
+    assert target_list.uid is not None, "Target list UID should not be None"
+    
+    # --- Create Task ---
+    new_task_text = f"X-Prop Test Task - {uuid.uuid4()}"
+    task_to_create = TaskData(
+        text=new_task_text,
+        list_uid=target_list.uid
+    )
+    
+    print(f"Creating task '{new_task_text}' in list '{target_list.name}'")
+    created_task = api.add_task(task_to_create, target_list.uid)
+    assert created_task.uid, "Created task should have a UID"
+    assert created_task.synced, "Created task should be marked as synced"
+    
+    # --- Add X Property ---
+    x_prop_name = f"X-TEST-PROP-{uuid.uuid4()}"
+    x_prop_value = f"test-value-{uuid.uuid4()}"
+    
+    print(f"Adding X property {x_prop_name}={x_prop_value} to task")
+    created_task.x_properties[x_prop_name] = x_prop_value
+    updated_task = api.update_task(created_task)
+    
+    assert updated_task.synced, "Updated task should be marked as synced"
+    
+    # --- Verify X Property ---
+    # Reload data to ensure we get fresh data from server
+    api.load_remote_data()
+    
+    # Find the task in the reloaded data
+    task_list = api.get_task_list_by_uid(target_list.uid)
+    assert task_list is not None, "Task list should be found after reload"
+    
+    found_task = None
+    for task in task_list.tasks:
+        if task.uid == created_task.uid:
+            found_task = task
+            break
+    
+    assert found_task is not None, f"Task '{new_task_text}' (UID: {created_task.uid}) should be found after reload"
+    
+    # Check that the X property exists
+    x_props = found_task.x_properties.get_raw_properties()
+    assert x_prop_name in x_props, f"X property {x_prop_name} should exist in task"
+    assert x_props[x_prop_name] == x_prop_value, f"X property value should be {x_prop_value}, got {x_props.get(x_prop_name)}"
+    
+    print(f"Successfully verified X property {x_prop_name}={x_prop_value} on task")
+    
+    # --- Delete Task ---
+    print(f"Deleting task UID {created_task.uid}")
+    delete_successful = api.delete_task(created_task.uid, target_list.uid)
+    assert delete_successful, "Task deletion should be successful"
+    
+    # Verify deletion
+    api.load_remote_data()
+    task_list = api.get_task_list_by_uid(target_list.uid)
+    for task in task_list.tasks:
+        assert task.uid != created_task.uid, f"Task UID {created_task.uid} should not exist after deletion"
+
+
 def test_task_ical_roundtrip():
     """
     Test that the to_ical() → from_ical() roundtrip conversion works correctly,
