@@ -210,7 +210,9 @@ class TaskData:
         ical += f"UID:{self.uid}\n"
         ical += f"SUMMARY:{self.text}\n"
         if self.notes:
-            ical += f"DESCRIPTION:{self.notes}\n"  # Ensure DESCRIPTION is not empty
+            # Escape newlines and commas as per iCal spec
+            escaped_notes = self.notes.replace("\n", "\\n").replace(",", "\\,")
+            ical += f"DESCRIPTION:{escaped_notes}\n"  # Ensure DESCRIPTION is not empty
 
         ical += f"DTSTAMP:{self.created_at}\n"  # Typically creation or last data stamp
         ical += f"LAST-MODIFIED:{self.changed_at}\n"
