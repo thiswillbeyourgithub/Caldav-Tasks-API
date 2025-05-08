@@ -311,9 +311,9 @@ class TaskData:
                     "\\,", ","
                 )  # Unescape common characters
             elif "DTSTAMP" == prop_name:
-                task.created_at = value.strip("Z")
+                task.created_at = value
             elif "LAST-MODIFIED" == prop_name:
-                task.changed_at = value.strip("Z")
+                task.changed_at = value
             elif "STATUS" == prop_name:
                 task.completed = value == "COMPLETED"
             elif "PERCENT-COMPLETE" == prop_name:
@@ -322,9 +322,9 @@ class TaskData:
                 except ValueError:
                     task.percent_complete = 0  # Default if invalid
             elif "DUE" == prop_name:
-                task.due_date = value.strip("Z")
+                task.due_date = value
             elif "DTSTART" == prop_name:
-                task.start_date = value.strip("Z")
+                task.start_date = value
             elif "PRIORITY" == prop_name:
                 try:
                     task.priority = int(value)
