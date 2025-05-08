@@ -199,20 +199,20 @@ else:
 
 ## Supported Operations & Testing Status
 
-| Feature                 | CLI Support & Tested                      | Python API Support & Tested           | Remarks                                                                                                                               |
-| ----------------------- | ----------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Connect to Server       | ✅ (Implicit in `show_summary`)          | ✅ (Tested via `conftest.py` fixtures)             | Credentials via args or env vars (`CALDAV_URL`, `CALDAV_USERNAME`, `CALDAV_PASSWORD`).                                                |
-| Fetch Task Lists        | ✅ (`show_summary` command)              | ✅ (Tested in `test_tasks_api.py::test_fetch_task_lists`) | Loads names, UIDs, and associated tasks.                                                                                      |
-| Fetch Tasks             | ✅ (Displayed by `show_summary` command) | ✅ (Tested in `test_tasks_api.py::test_find_tasks_in_lists`) | Tasks are loaded as part of `TaskListData.tasks`. Includes details like summary, due date, status, X-properties, etc.             |
-| Create Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_delete_task`, `test_create_single_task`) | `TasksAPI.add_task()` creates a new VTODO on the server.                                                              |
-| Update Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_rename_task`) | `TasksAPI.update_task()` updates an existing VTODO on the server.                                                              |
-| Delete Task             | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_create_and_delete_task`) | `TasksAPI.delete_task()` removes a VTODO by its UID from a specified list.                                                          |
-| JSON Output             | ✅ (`--json` option for all commands)     | ❌ (API returns Python objects)       | CLI can output JSON format for integration with other tools.                                                                        |
-| Read-Only Mode          | ❌ (Planned for future CLI commands)      | ✅ (Tested in `test_tasks_api.py::test_*_in_read_only_mode` tests) | When enabled, prevents any modifications to the server.                                                                           |
-| X-Property Handling     | ❌ (CLI displays but can't modify)        | ✅ (Tested in `test_tasks_api.py::test_create_update_xprop_delete_task`) | Preserves and provides flexible access to custom X-properties.                                                                    |
-| iCal Roundtrip          | ❌ (Not applicable to CLI)                | ✅ (Tested in `test_tasks_api.py::test_task_ical_roundtrip`) | Ensures consistent conversion to/from iCalendar format.                                                                            |
-| Filter by Target Lists  | ✅ (`--list` option for `show_summary`)  | ✅ (Constructor argument `target_lists`) | Allows specifying list names or UIDs to operate on during initialization.                                                           |
-| Debug Mode              | ✅ (`--debug` option for `show_summary`) | ✅ (Constructor argument `debug`)      | CLI: Enables PDB post-mortem and interactive console. API: Enables PDB for certain exceptions during development.                     |
+| Feature                 | CLI | API | Description                                                           |
+| ----------------------- | --- | --- | --------------------------------------------------------------------- |
+| Connect to Server       | ✅  | ✅  | Connect using credentials via args or environment variables           |
+| Fetch Task Lists        | ✅  | ✅  | Load calendar lists that support tasks (VTODOs)                       |
+| Fetch Tasks             | ✅  | ✅  | Retrieve tasks with details (summary, due date, status, etc.)         |
+| Create Task             | ❌  | ✅  | Create new tasks on the server                                        |
+| Update Task             | ❌  | ✅  | Modify existing tasks                                                 |
+| Delete Task             | ❌  | ✅  | Remove tasks from the server                                          |
+| JSON Output             | ✅  | ❌  | Format output as JSON for CLI commands                                |
+| Read-Only Mode          | ❌  | ✅  | Prevent modifications to the server                                   |
+| X-Property Handling     | ❌  | ✅  | Support for custom task properties                                    |
+| iCal Roundtrip          | ❌  | ✅  | Consistent conversion to/from iCalendar format                        |
+| Filter by Target Lists  | ✅  | ✅  | Specify which lists to operate on                                     |
+| Debug Mode              | ✅  | ✅  | Enable debugging tools for troubleshooting                            |
 
 ## Handling of VTODO Properties (including X-Properties)
 
