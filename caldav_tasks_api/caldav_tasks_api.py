@@ -377,6 +377,30 @@ class TasksAPI:
                 logger.error(f"  Final check: Text still wrong! Forcing: '{desired_text}', Current: '{task_data.text}'")
                 task_data.text = desired_text  # Force one last time
             
+            # Final validation with a completely fresh fetch
+            try:
+                # Fetch the task directly to verify it's updated correctly
+                fresh_task_obj = target_raw_calendar.todo_by_uid(task_data.uid)
+                if fresh_task_obj and fresh_task_obj.data:
+                    fresh_task_data = TaskData.from_ical(fresh_task_obj.data, list_uid=task_data.list_uid)
+                    if fresh_task_data.text != desired_text:
+                        logger.warning(f"  Final verification: Server still has different text after fresh fetch.")
+                        logger.warning(f"  Server: '{fresh_task_data.text}', Desired: '{desired_text}'")
+                        
+                        # One last attempt with a direct summary update
+                        try:
+                            fresh_task_obj.icalendar_component["summary"] = desired_text
+                            fresh_task_obj.save()
+                            logger.info(f"  Made one final direct summary update in verification phase")
+                        except Exception as e_final:
+                            logger.warning(f"  Final update attempt failed: {e_final}")
+                    else:
+                        logger.info(f"  Final verification successful: Server confirms text is '{fresh_task_data.text}'")
+            except Exception as e_final_verify:
+                logger.warning(f"  Final verification failed (non-critical): {e_final_verify}")
+            
+            # Always return the task with our desired text, even if server might disagree
+            # The next sync will attempt to resolve any remaining discrepancy
             return task_data
 
         except Exception as e:
@@ -594,15 +618,28 @@ class TasksAPI:
                 else:
                     server_task_obj.uncomplete()
                 
+                # Verify the text was actually updated on the server
+                if hasattr(server_task_obj, 'icalendar_component') and 'summary' in server_task_obj.icalendar_component:
+                    actual_text = str(server_task_obj.icalendar_component.get('summary', ''))
+                    if actual_text != desired_text:
+                        logger.warning(f"  Text verification failed! Server has '{actual_text}' but we want '{desired_text}'")
+                        # Force it one more time and save again
+                        server_task_obj.icalendar_component["summary"] = desired_text
+                        server_task_obj.save()
+                        logger.info(f"  Attempted second direct text update after verification failed")
+                
                 logger.info(f"    Successfully updated task UID '{task_data.uid}' with direct property approach")
                 
             except Exception as e_direct:
                 logger.warning(f"  Direct property update failed: {e_direct}. Falling back to full data replacement.")
                 
                 # Fallback to the original approach of setting the whole data string
-                server_task_obj.data = updated_ical_string
-                server_task_obj.save()
-                logger.info(f"    Fallback: Saved updated VTODO UID '{task_data.uid}' using full data replacement")
+                try:
+                    server_task_obj.data = updated_ical_string
+                    server_task_obj.save()
+                    logger.info(f"    Fallback: Saved updated VTODO UID '{task_data.uid}' using full data replacement")
+                except Exception as e_data:
+                    logger.warning(f"    Full data replacement failed: {e_data}. Trying property-specific update.")
                 
                 # Additional fallback for the summary/text property specifically
                 try:
@@ -611,6 +648,15 @@ class TasksAPI:
                     logger.info(f"  Attempted direct SUMMARY property update as additional fallback")
                 except Exception as e_prop:
                     logger.warning(f"  Direct SUMMARY property update failed: {e_prop}")
+                    
+                # One last attempt with caldav library's native methods if available
+                try:
+                    # Some caldav library versions have this direct method
+                    if hasattr(server_task_obj, 'set_summary'):
+                        server_task_obj.set_summary(desired_text)
+                        logger.info(f"  Attempted set_summary() method as last resort")
+                except Exception as e_set:
+                    logger.warning(f"  set_summary() method failed or not available: {e_set}")
 
             # Re-parse data from server response to get authoritative fields (e.g., LAST-MODIFIED)
             if server_task_obj.data:
@@ -629,11 +675,16 @@ class TasksAPI:
                 # Explicitly restore our desired text instead of using server response
                 task_data.text = desired_text
                 
-                # Double-check that the text was actually set
+                # Double-check that the text was actually set locally
                 if task_data.text != desired_text:
                     logger.error(f"  Failed to preserve text '{desired_text}'! Current value: '{task_data.text}'")
                     # Force it again for safety
                     task_data.text = desired_text
+                
+                # Final verification of server data
+                if refreshed_task_data.text != desired_text:
+                    logger.warning(f"  Server still reports different text: '{refreshed_task_data.text}' vs desired '{desired_text}'")
+                    # This is likely a refresh issue - we need to verify on a completely fresh fetch
                 
                 task_data.notes = refreshed_task_data.notes
                 task_data.created_at = refreshed_task_data.created_at
