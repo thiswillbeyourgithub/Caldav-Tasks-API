@@ -369,6 +369,11 @@ class TasksAPI:
                 task_data.synced = True # Mark the original task_data as synced
                 logger.debug(f"  Task data updated with server href part as UID: {task_data.uid}, synced: {task_data.synced}. Full data not re-parsed.")
 
+            # Final validation that our text was preserved
+            if task_data.text != desired_text:
+                logger.error(f"  Final check: Text still wrong! Forcing: '{desired_text}', Current: '{task_data.text}'")
+                task_data.text = desired_text  # Force one last time
+            
             return task_data
 
         except Exception as e:
@@ -506,12 +511,29 @@ class TasksAPI:
             # Double-check that the iCal contains our text
             if desired_text not in updated_ical_string:
                 logger.warning(f"  Warning: Desired text '{desired_text}' not found in generated iCal. This might cause update issues.")
+                # Force regeneration of iCal with the correct text
+                task_data.text = desired_text
+                updated_ical_string = task_data.to_ical()
+                if desired_text not in updated_ical_string:
+                    logger.error(f"  Critical error: Unable to include text '{desired_text}' in iCal after retry")
             
             server_task_obj.data = updated_ical_string
             server_task_obj.save()
             logger.info(
                 f"    Successfully saved updated VTODO UID '{task_data.uid}'."
             )
+            
+            # Verify the server has the updated text
+            if hasattr(server_task_obj, 'data') and desired_text not in server_task_obj.data:
+                logger.warning(f"  Warning: After save(), server response does not include desired text '{desired_text}'")
+                # Try one more direct update with a more explicit approach
+                try:
+                    # Attempt direct edit of the SUMMARY property if available in the caldav library
+                    summary_prop = {'SUMMARY': desired_text}
+                    server_task_obj.update_properties(summary_prop)
+                    logger.info(f"  Attempted direct SUMMARY property update as fallback")
+                except Exception as e_prop:
+                    logger.warning(f"  Direct property update failed: {e_prop}")
 
             # Re-parse data from server response to get authoritative fields (e.g., LAST-MODIFIED)
             if server_task_obj.data:

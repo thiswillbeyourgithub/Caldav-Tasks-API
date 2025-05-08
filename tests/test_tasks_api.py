@@ -217,6 +217,10 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
     assert created_task_data.synced is True, "Created task should be marked as synced."
     print(f"Successfully created task '{created_task_data.text}' with UID '{created_task_data.uid}'")
 
+    # Add delay to ensure the server has time to process the creation
+    import time
+    time.sleep(2)
+
     # --- Rename Task ---
     renamed_task_text = f"Renamed Task - {uuid.uuid4()}"
     task_to_update = created_task_data # Work with the instance returned by add_task
