@@ -282,7 +282,9 @@ class TaskData:
 
         # Add any other X-properties
         for key, value in self.x_properties.items():
-            ical += f"{key}:{value}\n"
+            # Escape special characters that might interfere with iCal parsing
+            escaped_value = value.replace("\n", "\\n").replace(",", "\\,").replace(";", "\\;")
+            ical += f"{key}:{escaped_value}\n"
 
         # attachments are not standard in VTODO, would need X-PROP or ATTACH property
 
@@ -383,9 +385,11 @@ class TaskData:
                 task.rrule = value
             # Capture any other X- properties
             elif prop_name.startswith("X-"):
+                # Unescape special characters in the value
+                unescaped_value = value.replace("\\n", "\n").replace("\\,", ",").replace("\\;", ";")
                 # task.x_properties is an XProperties instance, so this uses XProperties.__setitem__
                 task.x_properties[prop_part] = (
-                    value  # Store with original casing and params
+                    unescaped_value  # Store with original casing and params
                 )
 
         # If UID was somehow not in the VTODO, ensure it's set (should not happen for valid VTODO)
