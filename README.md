@@ -44,11 +44,15 @@ Currently, the project is not yet packaged for PyPI. To use it:
     ```
 2.  Install dependencies (ensure you have `python>=3.8`):
     ```bash
-    pip install -r requirements.txt 
-    # Or, for development:
+    # Install the package and all dependencies:
+    pip install .
+    
+    # For development with editable install:
     pip install -e .
+    
+    # For development with additional dev dependencies:
+    pip install -e ".[dev]"
     ```
-    (Note: A `requirements.txt` might need to be generated or dependencies listed in `setup.py` should be sufficient for `pip install .`)
 
 
 ## Usage
@@ -61,23 +65,27 @@ Credentials for the CalDAV server can be provided as arguments to the CLI or `Ta
 
 ### Command-Line Interface (CLI)
 
-The CLI provides a simple way to interact with your CalDAV tasks. The main entry point is `caldav_tasks_api.__main__`.
+The CLI provides a simple way to interact with your CalDAV tasks. After installation, you can use the CLI in two ways:
 
-**Basic Invocation:**
+1. **Using the installed command** (if installed via pip):
+   ```bash
+   caldav-tasks-api <command> [options]
+   ```
 
-```bash
-python -m caldav_tasks_api <command> [options]
-```
+2. **Using the module directly** (if running from source):
+   ```bash
+   python -m caldav_tasks_api <command> [options]
+   ```
 
 **Available Commands:**
 
 *   `show_summary`: Connects to the server, loads task lists and tasks, and prints a summary.
 
-**Example:**
+**Examples:**
 
 ```bash
-# Using command-line arguments for credentials
-python -m caldav_tasks_api show_summary \
+# Using command-line arguments for credentials (installed version)
+caldav-tasks-api show_summary \
     --url "https://your.nextcloud.instance/remote.php/dav" \
     --username "your_user" \
     --password "your_password"
@@ -86,21 +94,26 @@ python -m caldav_tasks_api show_summary \
 export CALDAV_URL="https://your.nextcloud.instance/remote.php/dav"
 export CALDAV_USERNAME="your_user"
 export CALDAV_PASSWORD="your_password"
-python -m caldav_tasks_api show_summary
+caldav-tasks-api show_summary
 
 # Show summary for specific task lists and enable debug console
-python -m caldav_tasks_api show_summary --list "Personal" "Work Project" --debug
+caldav-tasks-api show_summary --list "Personal" --list "Work Project" --debug
+
+# Output results in JSON format (useful for scripting)
+caldav-tasks-api show_summary --json > tasks_data.json
 ```
 
 **Common Options:**
 
-*   `--url TEXT`: CalDAV server URL.
-*   `--username TEXT`: CalDAV username.
-*   `--password TEXT`: CalDAV password.
-*   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True).
-*   `--list TEXT ...`: Specify one or more task list names or UIDs to load.
-*   `--debug / --no-debug`: Enable PDB post-mortem debugging and interactive console (default: False).
-*   `--json / --no-json`: Output summary information in JSON format (default: False).
+*   `--url TEXT`: CalDAV server URL (or set CALDAV_URL env var)
+*   `--username TEXT`: CalDAV username (or set CALDAV_USERNAME env var)
+*   `--password TEXT`: CalDAV password (or set CALDAV_PASSWORD env var)
+*   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True)
+*   `--list TEXT, -l TEXT`: Specify a task list name or UID to load (can use multiple times)
+*   `--debug / --no-debug`: Enable interactive debugging console (default: False)
+*   `--json / --no-json`: Output summary information in JSON format (default: False)
+
+**Note:** All CLI operations are read-only by default. To modify tasks, use the Python API.
 
 ### Python API
 
