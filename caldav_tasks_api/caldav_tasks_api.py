@@ -499,6 +499,7 @@ class TasksAPI:
                 f"  Attempting to save updated VTODO to calendar '{target_raw_calendar.name}':\n{updated_ical_string[:200]}..."
             )
             logger.debug(f"  Text being updated: '{desired_text}'")
+            logger.debug(f"  Text being updated: '{desired_text}'")
 
             server_task_obj.data = updated_ical_string
             server_task_obj.save()
