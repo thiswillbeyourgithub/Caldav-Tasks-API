@@ -520,23 +520,97 @@ class TasksAPI:
                 if desired_text not in updated_ical_string:
                     logger.error(f"  Critical error: Unable to include text '{desired_text}' in iCal after retry")
             
-            server_task_obj.data = updated_ical_string
-            server_task_obj.save()
-            logger.info(
-                f"    Successfully saved updated VTODO UID '{task_data.uid}'."
-            )
-            
-            # Verify the server has the updated text
-            if hasattr(server_task_obj, 'data') and desired_text not in server_task_obj.data:
-                logger.warning(f"  Warning: After save(), server response does not include desired text '{desired_text}'")
-                # Try one more direct update with a more explicit approach
+            # Update individual properties directly on the iCalendar component
+            # This approach works more reliably than setting the entire data string
+            try:
+                logger.debug(f"  Updating task properties directly on iCalendar component")
+                
+                # Set the main properties
+                server_task_obj.icalendar_component["summary"] = desired_text  # Set text directly
+                
+                if task_data.notes:
+                    server_task_obj.icalendar_component["description"] = task_data.notes
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["description"]
+                    except KeyError:
+                        pass
+                
+                server_task_obj.icalendar_component["last-modified"] = task_data.changed_at
+                server_task_obj.icalendar_component["percent-complete"] = task_data.percent_complete
+                
+                # Handle dates
+                if task_data.due_date:
+                    server_task_obj.icalendar_component["due"] = task_data.due_date
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["due"]
+                    except KeyError:
+                        pass
+                        
+                if task_data.start_date:
+                    server_task_obj.icalendar_component["dtstart"] = task_data.start_date
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["dtstart"]
+                    except KeyError:
+                        pass
+                
+                # Other properties
+                if task_data.priority:
+                    server_task_obj.icalendar_component["priority"] = task_data.priority
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["priority"]
+                    except KeyError:
+                        pass
+                        
+                if task_data.parent:
+                    server_task_obj.icalendar_component["related-to"] = task_data.parent
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["related-to"]
+                    except KeyError:
+                        pass
+                
+                if task_data.tags:
+                    server_task_obj.icalendar_component["categories"] = ",".join(task_data.tags)
+                else:
+                    try:
+                        del server_task_obj.icalendar_component["categories"]
+                    except KeyError:
+                        pass
+                
+                # X-properties
+                for key, value in task_data.x_properties.items():
+                    server_task_obj.icalendar_component[key] = value
+                
+                # Save changes
+                server_task_obj.save()
+                
+                # Handle completion status separately
+                if task_data.completed:
+                    server_task_obj.complete()
+                else:
+                    server_task_obj.uncomplete()
+                
+                logger.info(f"    Successfully updated task UID '{task_data.uid}' with direct property approach")
+                
+            except Exception as e_direct:
+                logger.warning(f"  Direct property update failed: {e_direct}. Falling back to full data replacement.")
+                
+                # Fallback to the original approach of setting the whole data string
+                server_task_obj.data = updated_ical_string
+                server_task_obj.save()
+                logger.info(f"    Fallback: Saved updated VTODO UID '{task_data.uid}' using full data replacement")
+                
+                # Additional fallback for the summary/text property specifically
                 try:
-                    # Attempt direct edit of the SUMMARY property if available in the caldav library
                     summary_prop = {'SUMMARY': desired_text}
                     server_task_obj.update_properties(summary_prop)
-                    logger.info(f"  Attempted direct SUMMARY property update as fallback")
+                    logger.info(f"  Attempted direct SUMMARY property update as additional fallback")
                 except Exception as e_prop:
-                    logger.warning(f"  Direct property update failed: {e_prop}")
+                    logger.warning(f"  Direct SUMMARY property update failed: {e_prop}")
 
             # Re-parse data from server response to get authoritative fields (e.g., LAST-MODIFIED)
             if server_task_obj.data:
