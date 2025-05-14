@@ -28,9 +28,9 @@ def get_api(url: Optional[str], username: Optional[str], password: Optional[str]
     Validates credentials and raises appropriate errors.
     """
     # Get credentials from args or environment
-    url = url or os.environ.get("CALDAV_URL")
-    username = username or os.environ.get("CALDAV_USERNAME")
-    password = password or os.environ.get("CALDAV_PASSWORD")
+    url = url or os.environ.get("CALDAV_TASKS_API_URL")
+    username = username or os.environ.get("CALDAV_TASKS_API_USERNAME")
+    password = password or os.environ.get("CALDAV_TASKS_API_PASSWORD")
     
     # Validate credentials
     if not url:

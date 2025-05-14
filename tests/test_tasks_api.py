@@ -305,7 +305,7 @@ def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
 def test_cli_show_summary_json_runs_successfully(caldav_credentials):
     """
     Test that the CLI 'show-summary' command with '--json' runs successfully.
-    This test relies on CALDAV_URL, CALDAV_USERNAME, CALDAV_PASSWORD environment
+    This test relies on CALDAV_TASKS_API_TEST_URL, CALDAV_TASKS_API_TEST_USERNAME, CALDAV_TASKS_API_TEST_PASSWORD environment
     variables being set (handled by the caldav_credentials fixture).
     """
     # caldav_credentials fixture ensures env vars are set for the subprocess

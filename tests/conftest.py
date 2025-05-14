@@ -9,12 +9,12 @@ load_dotenv()
 @pytest.fixture(scope="session")
 def caldav_credentials():
     """Fixture to provide CalDAV credentials from environment variables."""
-    url = os.environ.get("CALDAV_URL")
-    username = os.environ.get("CALDAV_USERNAME")
-    password = os.environ.get("CALDAV_PASSWORD")
+    url = os.environ.get("CALDAV_TASKS_API_TEST_URL")
+    username = os.environ.get("CALDAV_TASKS_API_TEST_USERNAME")
+    password = os.environ.get("CALDAV_TASKS_API_TEST_PASSWORD")
 
     if not all([url, username, password]):
-        pytest.skip("CALDAV_URL, CALDAV_USERNAME, or CALDAV_PASSWORD environment variables not set.")
+        pytest.skip("CALDAV_TASKS_API_TEST_URL, CALDAV_TASKS_API_TEST_USERNAME, or CALDAV_TASKS_API_TEST_PASSWORD environment variables not set.")
     
     return {"url": url, "username": username, "password": password}
 

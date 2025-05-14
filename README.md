@@ -65,9 +65,9 @@ Alternatively, you can install from source:
 
 Credentials for the CalDAV server can be provided as arguments to the CLI or `TasksAPI` constructor, or via the following environment variables:
 
-*   `CALDAV_URL`: The full URL to your CalDAV server (e.g., `https://cloud.example.com/remote.php/dav`)
-*   `CALDAV_USERNAME`: Your CalDAV username.
-*   `CALDAV_PASSWORD`: Your CalDAV password.
+*   `CALDAV_TASKS_API_URL`: The full URL to your CalDAV server (e.g., `https://cloud.example.com/remote.php/dav`)
+*   `CALDAV_TASKS_API_USERNAME`: Your CalDAV username.
+*   `CALDAV_TASKS_API_PASSWORD`: Your CalDAV password.
 
 ### Command-Line Interface (CLI)
 
@@ -97,9 +97,9 @@ caldav-tasks-api show_summary \
     --password "your_password"
 
 # Using environment variables (assuming they are set)
-export CALDAV_URL="https://your.nextcloud.instance/remote.php/dav"
-export CALDAV_USERNAME="your_user"
-export CALDAV_PASSWORD="your_password"
+export CALDAV_TASKS_API_URL="https://your.nextcloud.instance/remote.php/dav"
+export CALDAV_TASKS_API_USERNAME="your_user"
+export CALDAV_TASKS_API_PASSWORD="your_password"
 caldav-tasks-api show_summary
 
 # Show summary for specific task lists and enable debug console
@@ -111,9 +111,9 @@ caldav-tasks-api show_summary --json > tasks_data.json
 
 **Common Options:**
 
-*   `--url TEXT`: CalDAV server URL (or set CALDAV_URL env var)
-*   `--username TEXT`: CalDAV username (or set CALDAV_USERNAME env var)
-*   `--password TEXT`: CalDAV password (or set CALDAV_PASSWORD env var)
+*   `--url TEXT`: CalDAV server URL (or set CALDAV_TASKS_API_URL env var)
+*   `--username TEXT`: CalDAV username (or set CALDAV_TASKS_API_USERNAME env var)
+*   `--password TEXT`: CalDAV password (or set CALDAV_TASKS_API_PASSWORD env var)
 *   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True)
 *   `--list TEXT, -l TEXT`: Specify a task list name or UID to load (can use multiple times)
 *   `--debug / --no-debug`: Enable interactive debugging console (default: False)
@@ -134,9 +134,9 @@ from caldav_tasks_api.utils.data import XProperties # For advanced X-Property ha
 # Credentials can be passed directly or loaded from environment variables if not provided
 try:
     api = TasksAPI(
-        url="YOUR_CALDAV_URL", # or os.environ.get("CALDAV_URL")
-        username="YOUR_USERNAME", # or os.environ.get("CALDAV_USERNAME")
-        password="YOUR_PASSWORD", # or os.environ.get("CALDAV_PASSWORD")
+        url="YOUR_CALDAV_URL", # or os.environ.get("CALDAV_TASKS_API_URL")
+        username="YOUR_USERNAME", # or os.environ.get("CALDAV_TASKS_API_USERNAME")
+        password="YOUR_PASSWORD", # or os.environ.get("CALDAV_TASKS_API_PASSWORD")
         # nextcloud_mode=True,  # Default, adjust if not using Nextcloud
         # target_lists=["Personal", "Work"], # Optional: load only specific lists by name or UID
         # debug=True, # Optional: enable PDB for certain exceptions
