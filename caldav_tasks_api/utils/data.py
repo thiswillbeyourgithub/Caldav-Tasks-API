@@ -261,6 +261,21 @@ class TaskData:
             return self._api_reference.get_task_by_global_uid(self.parent)
         return None
 
+    @property
+    def child_tasks(self) -> list["TaskData"]:
+        """
+        Returns a list of child TaskData objects, if this task has children
+        and an API reference to search for them.
+        Searches for tasks whose 'parent' field matches this task's UID.
+        """
+        children: list[TaskData] = []
+        if self._api_reference and self.uid:  # self.uid must exist to be a parent
+            for task_list in self._api_reference.task_lists:
+                for task_item in task_list.tasks: # Renamed 'task' to 'task_item' to avoid conflict with `TaskData` type hint in some contexts
+                    if task_item.parent == self.uid:
+                        children.append(task_item)
+        return children
+
     def to_ical(self) -> str:
         """Build VTODO iCal component string from TaskData properties."""
         ical: str = ""
