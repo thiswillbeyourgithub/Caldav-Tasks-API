@@ -219,6 +219,8 @@ else:
 
 ## Supported Operations & Testing Status
 
+This section outlines the core features of the library and their corresponding test coverage within the automated test suite.
+
 ### Python API Features
 
 | Feature                 | Status | Description                                                           |
