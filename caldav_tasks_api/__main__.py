@@ -201,5 +201,53 @@ def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary):
         raise click.Abort()
 
 
+@cli.command(name="list-lists")
+@click.option('--url', help='CalDAV server URL (or set CALDAV_URL env var)')
+@click.option('--username', help='CalDAV username (or set CALDAV_USERNAME env var)')
+@click.option('--password', help='CalDAV password (or set CALDAV_PASSWORD env var)')
+@click.option('--nextcloud-mode/--no-nextcloud-mode', default=True,
+              help='Adjust URL for Nextcloud specific path [default: enabled]')
+@click.option('--debug/--no-debug', default=False,
+              help='Enable debug mode with interactive console [default: disabled]')
+# target_lists is implicitly all lists for this command
+def list_lists(url, username, password, nextcloud_mode, debug):
+    """Connect to CalDAV server and print a JSON list of task lists (name and UID)."""
+    logger.debug(f"CLI list-lists initiated with url: {'***' if url else 'from env'}, "
+                f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
+                f"debug: {debug}")
+
+    try:
+        # This command is inherently read-only.
+        # No specific target_lists, we want all lists.
+        api = get_api(url, username, password, nextcloud_mode, debug, target_lists=None, read_only=True)
+        logger.info("Loading remote task lists...")
+        api.load_remote_data() # This loads all lists and their tasks
+
+        # Prepare data for JSON output: a list of dicts with name and UID
+        output_data = [
+            {"name": tl.name, "uid": tl.uid} for tl in api.task_lists
+        ]
+        click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
+
+        if debug:
+            click.echo("Debug mode: Starting interactive console. API available as 'api'.")
+            click.echo("Variables available: api, output_data, locals()")
+            _globals = globals().copy()
+            _locals = locals().copy()
+            _globals.update(_locals)
+            code.interact(local=_globals)
+
+    except click.UsageError as ue:
+        click.echo(f"Configuration error: {ue}", err=True)
+        raise click.Abort()
+    except ConnectionError as ce:
+        click.echo(f"Connection failed: {ce}", err=True)
+        raise click.Abort()
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {e}")
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+
+
 if __name__ == "__main__":
     cli()
