@@ -6,7 +6,7 @@ and the data structures TaskListData and TaskData for representing task lists an
 """
 
 # Initialize logging configuration as early as possible
-from . import logging_config # This will run setup_logging()
+from .utils import logging_config # This will run setup_logging()
 
 from .caldav_tasks_api import TasksAPI
 from .utils.data import TaskData, TaskListData
