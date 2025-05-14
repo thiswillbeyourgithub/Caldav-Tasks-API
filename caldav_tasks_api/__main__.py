@@ -134,6 +134,99 @@ def show_summary(url, username, password, nextcloud_mode, debug, list, json_outp
         raise click.Abort()
 
 
+@cli.command(name="list-latest-tasks")
+@click.option('--url', help='CalDAV server URL (or set CALDAV_URL env var)')
+@click.option('--username', help='CalDAV username (or set CALDAV_USERNAME env var)')
+@click.option('--password', help='CalDAV password (or set CALDAV_PASSWORD env var)')
+@click.option('--nextcloud-mode/--no-nextcloud-mode', default=True,
+              help='Adjust URL for Nextcloud specific path [default: enabled]')
+@click.option('--debug/--no-debug', default=False,
+              help='Enable debug mode with interactive console [default: disabled]')
+@click.option('--list-uid', default=None, help='UID of the task list to filter tasks from (optional).')
+@click.option('--limit', default=10, type=int, help='Maximum number of tasks to return [default: 10].')
+def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, limit):
+    """
+    List the most recently created, non-completed tasks, sorted by creation_date.
+    Output is in JSON format.
+    """
+    logger.debug(f"CLI list-latest-tasks initiated with url: {'***' if url else 'from env'}, "
+                f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
+                f"debug: {debug}, list_uid: {list_uid}, limit: {limit}")
+
+    try:
+        # This command is inherently read-only.
+        # target_lists can be set to [list_uid] if list_uid is provided,
+        # or None to fetch all lists and then filter.
+        # Fetching all might be simpler if TaskData doesn't always have list_uid readily after parsing.
+        # However, TasksAPI constructor takes target_lists to filter calendars.
+        target_lists_filter = [list_uid] if list_uid else None
+        api = get_api(url, username, password, nextcloud_mode, debug, target_lists=target_lists_filter, read_only=True)
+        
+        logger.info("Loading remote tasks...")
+        api.load_remote_data()
+
+        all_relevant_tasks: List[TaskData] = []
+        for task_list in api.task_lists:
+            # If list_uid was specified for filtering at API level, only that list will be here.
+            # If list_uid was specified but not for API level (e.g. target_lists=None initially),
+            # we'd filter here. Current setup filters at API level via target_lists_filter.
+            # If no list_uid specified, all lists (respecting target_lists_filter) are processed.
+            if list_uid and task_list.uid != list_uid: # Defensive check if target_lists_filter wasn't perfect
+                continue
+
+            for task in task_list.tasks:
+                if not task.completed:
+                    all_relevant_tasks.append(task)
+        
+        logger.debug(f"Found {len(all_relevant_tasks)} non-completed tasks initially.")
+
+        # Sort tasks by created_at (descending, most recent first)
+        # Helper to parse created_at string to datetime for sorting
+        def get_task_sort_key(t: TaskData):
+            from datetime import datetime, timezone # Import here if not at top level
+            if t.created_at:
+                try:
+                    # Assuming created_at is in ISO 8601 format like 'YYYYMMDDTHHMMSSZ'
+                    return datetime.strptime(t.created_at, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+                except ValueError:
+                    logger.warning(f"Invalid created_at format '{t.created_at}' for task UID {t.uid}. Treating as very old.")
+                    return datetime.min.replace(tzinfo=timezone.utc) # Earliest possible datetime
+            return datetime.min.replace(tzinfo=timezone.utc) # Tasks without created_at are considered oldest
+
+        sorted_tasks = sorted(all_relevant_tasks, key=get_task_sort_key, reverse=True)
+        
+        # Apply limit
+        limited_tasks = sorted_tasks[:limit]
+        logger.info(f"Returning {len(limited_tasks)} tasks after sorting and applying limit of {limit}.")
+
+        # Reversing the list here, as requested.
+        # This implies that the previous state of limited_tasks (derived from a sort with reverse=True)
+        # was effectively oldest-first if the goal is to now see latest-first after this reversal.
+        limited_tasks.reverse()
+
+        # Prepare data for JSON output
+        output_data = [task.to_dict() for task in limited_tasks]
+        click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
+
+        if debug:
+            click.echo("Debug mode: Starting interactive console. API, tasks available as 'api', 'output_data'.")
+            _globals = globals().copy()
+            _locals = locals().copy()
+            _globals.update(_locals)
+            code.interact(local=_globals)
+
+    except click.UsageError as ue:
+        click.echo(f"Configuration error: {ue}", err=True)
+        raise click.Abort()
+    except ConnectionError as ce:
+        click.echo(f"Connection failed: {ce}", err=True)
+        raise click.Abort()
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {e}")
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+
+
 @cli.command()
 @click.option('--url', help='CalDAV server URL (or set CALDAV_URL env var)')
 @click.option('--username', help='CalDAV username (or set CALDAV_USERNAME env var)')
@@ -142,10 +235,10 @@ def show_summary(url, username, password, nextcloud_mode, debug, list, json_outp
               help='Adjust URL for Nextcloud specific path [default: enabled]')
 @click.option('--debug/--no-debug', default=False,
               help='Enable debug mode with interactive console [default: disabled]')
-@click.option('--list-uid', required=True, help='UID of the task list to add the task to.')
+@click.option('--list-uid', required=True, help='UID of the task list to add the task to.') # Keep this for add_task
 @click.option('--summary', required=True, help='Summary/text of the task.')
 # Add more options for other TaskData fields as needed (e.g., --notes, --due-date)
-def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary):
+def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary): # list_uid is specific to this command
     """Add a new task to a specified task list."""
     logger.debug(f"CLI add-task initiated with url: {'***' if url else 'from env'}, "
                 f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
