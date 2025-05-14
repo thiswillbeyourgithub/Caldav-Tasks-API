@@ -8,6 +8,7 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/thiswillbeyourgithub/CaldavTasksAPI/",
+    keywords=["caldav", "tasks", "vtodo", "todo", "cli", "api", "nextcloud", "calendar", "task management"],
     packages=find_packages(include=['caldav_tasks_api', 'caldav_tasks_api.*']),
     install_requires=[
         "caldav>=1.4.0",
