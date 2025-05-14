@@ -3,8 +3,11 @@ from __future__ import annotations
 import datetime
 import random
 from dataclasses import dataclass, field, fields  # Added fields
-from typing import Optional, Dict  # Added Optional and Dict
+from typing import Optional, Dict, TYPE_CHECKING  # Added Optional and Dict
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from ..caldav_tasks_api import TasksAPI
 
 
 
@@ -184,6 +187,9 @@ class TaskData:
     x_properties: XProperties = field(
         default_factory=XProperties
     )  # For any other X- properties
+    _api_reference: Optional["TasksAPI"] = field(
+        default=None, repr=False, compare=False
+    )  # Reference to the TasksAPI instance, set by TasksAPI
 
     def __post_init__(self):
         """Set default values that need to be calculated and ensure types."""
@@ -243,6 +249,17 @@ class TaskData:
             value = getattr(self, f.name)
             field_strings.append(f"{f.name}={value!r}")  # Use repr for each value
         return f"{self.__class__.__name__}(\n  " + ",\n  ".join(field_strings) + "\n)"
+
+    @property
+    def parent_task(self) -> Optional["TaskData"]:
+        """
+        Returns the parent TaskData object, if this task has a parent UID
+        and an API reference to search for it.
+        """
+        if self.parent and self._api_reference:
+            # get_task_by_global_uid will search across all lists managed by the API instance
+            return self._api_reference.get_task_by_global_uid(self.parent)
+        return None
 
     def to_ical(self) -> str:
         """Build VTODO iCal component string from TaskData properties."""

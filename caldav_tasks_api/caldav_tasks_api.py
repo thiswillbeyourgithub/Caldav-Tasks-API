@@ -200,6 +200,7 @@ class TasksAPI:
                             todo_obj.data, list_uid=task_list_data.uid
                         )
                         task_data.synced = True
+                        task_data._api_reference = self
                         task_list_data.tasks.append(task_data)
                         tasks_added_to_list_count += 1
                         logger.trace(f"    Successfully parsed VTODO (UID: {task_data.uid}) and added to list '{task_list_data.name}'.")
@@ -248,6 +249,7 @@ class TasksAPI:
                                     vtodo_ical_string, list_uid=task_list_data.uid
                                 )
                                 task_data.synced = True
+                                task_data._api_reference = self
                                 task_list_data.tasks.append(task_data)
                                 tasks_added_to_list_count += 1
                                 logger.trace(f"    Fallback: Successfully parsed VTODO (UID: {task_data.uid}) and added to list '{task_list_data.name}'.")
@@ -315,6 +317,17 @@ class TasksAPI:
             return task_list.tasks
         logger.debug(f"No tasks found for list UID {list_uid} as list itself was not found.")
         return []
+
+    def get_task_by_global_uid(self, task_uid: str) -> Optional[TaskData]:
+        """Retrieves a loaded task by its UID across all task lists."""
+        logger.debug(f"Attempting to get task by global UID: {task_uid}")
+        for task_list in self.task_lists:
+            for task in task_list.tasks:
+                if task.uid == task_uid:
+                    logger.trace(f"Found task '{task.text}' in list '{task_list.name}' for global UID {task_uid}")
+                    return task
+        logger.debug(f"Task with global UID {task_uid} not found across any list.")
+        return None
 
     def add_task(self, task_data: TaskData, list_uid: str) -> TaskData:
         """
@@ -404,6 +417,7 @@ class TasksAPI:
             
             # Always return the task with our desired text, even if server might disagree
             # The next sync will attempt to resolve any remaining discrepancy
+            task_data._api_reference = self # Ensure the returned task has the API reference
             return task_data
 
         except Exception as e:
@@ -648,6 +662,7 @@ class TasksAPI:
                 logger.warning("Server did not return data for the updated task. Marking as synced, but local data might not reflect server's exact state.")
                 task_data.synced = True
 
+            task_data._api_reference = self # Ensure the returned task has the API reference
             return task_data
 
         except caldav.lib.error.NotFoundError:
