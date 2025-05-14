@@ -118,8 +118,9 @@ caldav-tasks-api show_summary --json > tasks_data.json
 *   `--list TEXT, -l TEXT`: Specify a task list name or UID to load (can use multiple times)
 *   `--debug / --no-debug`: Enable interactive debugging console (default: False)
 *   `--json / --no-json`: Output summary information in JSON format (default: False)
+*   `--read-only / --read-write`: Operate in read-only mode (default) or allow modifications (default: read-only). This flag controls if the underlying API instance is initialized in read-only mode.
 
-**Note:** All CLI operations are read-only by default. To modify tasks, use the Python API.
+**Note:** By default, CLI operations are read-only. Use the `--read-write` flag to enable modifications via the CLI, which will then use the Python API's write capabilities.
 
 ### Python API
 
@@ -236,7 +237,7 @@ else:
 
 ### Command-Line Interface Features
 
-**Note: The CLI is always in read-only mode and cannot modify tasks on the server.**
+**Note: By default, the CLI operates in read-only mode. The `--read-write` flag can be used to allow modifications.**
 
 | Feature                 | Status | Description                                                           |
 | ----------------------- | ------ | --------------------------------------------------------------------- |
