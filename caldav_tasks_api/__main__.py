@@ -19,8 +19,9 @@ from loguru import logger
 from .caldav_tasks_api import TasksAPI
 
 
-def get_api(url: Optional[str], username: Optional[str], password: Optional[str], 
-            nextcloud_mode: bool, debug: bool, target_lists: Optional[List[str]]) -> TasksAPI:
+def get_api(url: Optional[str], username: Optional[str], password: Optional[str],
+            nextcloud_mode: bool, debug: bool, target_lists: Optional[List[str]],
+            read_only: bool) -> TasksAPI:
     """
     Initializes and returns the TasksAPI instance.
     Validates credentials and raises appropriate errors.
@@ -57,7 +58,7 @@ def get_api(url: Optional[str], username: Optional[str], password: Optional[str]
         nextcloud_mode=nextcloud_mode,
         debug=debug,
         target_lists=target_lists,
-        read_only=True,  # CLI usage of TasksAPI is read-only by default
+        read_only=read_only,
     )
 
 
@@ -76,17 +77,19 @@ def cli():
 @click.option('--debug/--no-debug', default=False, 
               help='Enable debug mode with interactive console [default: disabled]')
 @click.option('--list', '-l', multiple=True, help='Filter by task list name or UID (can use multiple times)')
-@click.option('--json/--no-json', 'json_output', default=False, 
+@click.option('--json/--no-json', 'json_output', default=False,
               help='Output summary as JSON [default: disabled]')
-def show_summary(url, username, password, nextcloud_mode, debug, list, json_output):
+@click.option('--read-only/--read-write', 'read_only_flag', default=True,
+              help='Operate in read-only mode (default) or allow modifications [default: read-only]')
+def show_summary(url, username, password, nextcloud_mode, debug, list, json_output, read_only_flag):
     """Connect to CalDAV server and show a summary of all task lists and tasks."""
     target_lists = list if list else None
     logger.debug(f"CLI initialized with url: {'***' if url else 'from env'}, "
                 f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
-                f"debug: {debug}, lists: {target_lists}, json: {json_output}")
-    
+                f"debug: {debug}, lists: {target_lists}, json: {json_output}, read_only: {read_only_flag}")
+
     try:
-        api = get_api(url, username, password, nextcloud_mode, debug, target_lists)
+        api = get_api(url, username, password, nextcloud_mode, debug, target_lists, read_only=read_only_flag)
         logger.info("Loading remote tasks...")
         api.load_remote_data()
 
