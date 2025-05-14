@@ -1,5 +1,5 @@
-caldav-tasks-api documentation
-==============================
+Caldav-Tasks-API
+================
 
 This documentation is not yet written.
 
