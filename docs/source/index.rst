@@ -1,9 +1,6 @@
 Caldav-Tasks-API
 ================
 
-This documentation is not yet written.
-
-
 .. toctree::
    :maxdepth: 2
 
