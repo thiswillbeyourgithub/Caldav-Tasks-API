@@ -575,3 +575,115 @@ def test_task_ical_roundtrip():
     assert second_ical_string == ical_string, "Double conversion (to_ical→from_ical→to_ical) should produce the same output"
     
     print("Successfully verified TaskData.to_ical() → from_ical() → to_ical() roundtrip")
+
+
+def test_task_parent_child_relationships(tasks_api_instance: TasksAPI, test_list_name: str):
+    """
+    Test that parent-child relationships between tasks are correctly established and retrievable.
+    - Creates a parent task.
+    - Creates a child task linked to the parent.
+    - Verifies child.parent_task points to parent.
+    - Verifies parent.child_tasks contains child.
+    - Cleans up created tasks.
+    """
+    api = tasks_api_instance
+
+    # Find the target test list
+    target_list: TaskListData | None = None
+    # Ensure data is loaded before searching for the list, as task_lists might be empty initially
+    if not api.task_lists:
+        api.load_remote_data()
+        
+    for tl in api.task_lists:
+        if tl.name == test_list_name:
+            target_list = tl
+            break
+    
+    if not target_list:
+        pytest.skip(f"Test list '{test_list_name}' not found on the server. Skipping parent-child relationship test.")
+
+    assert target_list.uid is not None, "Target list UID should not be None"
+
+    # --- Create Parent Task ---
+    parent_task_text = f"Test Parent Task - {uuid.uuid4()}"
+    parent_to_create = TaskData(text=parent_task_text, list_uid=target_list.uid)
+    
+    print(f"Attempting to create parent task '{parent_task_text}' in list '{target_list.name}' (UID: {target_list.uid})")
+    created_parent_task = api.add_task(parent_to_create, target_list.uid)
+    assert created_parent_task is not None, "add_task (parent) should return the created task data."
+    assert created_parent_task.uid, "Created parent task data should have a UID."
+    assert created_parent_task.text == parent_task_text, "Parent task text mismatch."
+    assert created_parent_task.synced is True, "Created parent task should be marked as synced."
+    print(f"Successfully created parent task '{created_parent_task.text}' with UID '{created_parent_task.uid}'")
+
+    # --- Create Child Task ---
+    child_task_text = f"Test Child Task - {uuid.uuid4()}"
+    child_to_create = TaskData(
+        text=child_task_text,
+        list_uid=target_list.uid,
+        parent=created_parent_task.uid  # Link to the parent's UID
+    )
+
+    print(f"Attempting to create child task '{child_task_text}' linked to parent UID '{created_parent_task.uid}'")
+    created_child_task = api.add_task(child_to_create, target_list.uid)
+    assert created_child_task is not None, "add_task (child) should return the created task data."
+    assert created_child_task.uid, "Created child task data should have a UID."
+    assert created_child_task.text == child_task_text, "Child task text mismatch."
+    assert created_child_task.parent == created_parent_task.uid, "Child task parent UID mismatch."
+    assert created_child_task.synced is True, "Created child task should be marked as synced."
+    print(f"Successfully created child task '{created_child_task.text}' with UID '{created_child_task.uid}'")
+
+    # --- Reload data: Crucial for populating _api_reference correctly for all tasks in api.task_lists ---
+    print("Reloading all remote data to ensure API instance has fresh data and correct references.")
+    api.load_remote_data()
+
+    # --- Retrieve fresh tasks from API after reload ---
+    # These instances will be from the refreshed api.task_lists and have their _api_reference correctly set.
+    retrieved_parent = api.get_task_by_global_uid(created_parent_task.uid)
+    retrieved_child = api.get_task_by_global_uid(created_child_task.uid)
+
+    assert retrieved_parent is not None, f"Parent task (UID: {created_parent_task.uid}) should be found after reload."
+    assert retrieved_child is not None, f"Child task (UID: {created_child_task.uid}) should be found after reload."
+
+    # --- Test child's parent relationship ---
+    print(f"Verifying child task (UID: {retrieved_child.uid}) parent relationship...")
+    assert retrieved_child.parent_task is not None, "Child's parent_task property should resolve to a TaskData instance."
+    assert retrieved_child.parent_task.uid == retrieved_parent.uid, \
+        (f"Child's resolved parent UID ('{retrieved_child.parent_task.uid}') "
+         f"should match original parent UID ('{retrieved_parent.uid}').")
+    print("Child's parent relationship verified.")
+
+    # --- Test parent's child relationship ---
+    print(f"Verifying parent task (UID: {retrieved_parent.uid}) child relationship...")
+    assert retrieved_parent.child_tasks, "Parent's child_tasks property should return a non-empty list."
+    
+    found_child_in_parent_list = next((t for t in retrieved_parent.child_tasks if t.uid == retrieved_child.uid), None)
+    assert found_child_in_parent_list is not None, \
+        (f"Child task (UID: {retrieved_child.uid}) was not found in parent's (UID: {retrieved_parent.uid}) "
+         f"child_tasks list. Children found: {[c.uid for c in retrieved_parent.child_tasks]}.")
+    assert found_child_in_parent_list.uid == retrieved_child.uid, \
+        "The UID of the child found in parent's list does not match the expected child UID."
+    print("Parent's child relationship verified.")
+
+    # --- Clean up ---
+    print(f"Attempting to delete child task UID '{created_child_task.uid}'")
+    delete_child_successful = api.delete_task(created_child_task.uid, target_list.uid)
+    assert delete_child_successful, "Child task deletion should return True."
+    print(f"Successfully deleted child task UID '{created_child_task.uid}'.")
+
+    print(f"Attempting to delete parent task UID '{created_parent_task.uid}'")
+    delete_parent_successful = api.delete_task(created_parent_task.uid, target_list.uid)
+    assert delete_parent_successful, "Parent task deletion should return True."
+    print(f"Successfully deleted parent task UID '{created_parent_task.uid}'.")
+
+    # Optional: Verify deletion by reloading data and checking counts or absence
+    api.load_remote_data()
+    target_list_after_cleanup = api.get_task_list_by_uid(target_list.uid)
+    assert target_list_after_cleanup is not None, "Target list should still exist after cleanup."
+    
+    task_should_be_gone_child = api.get_task_by_global_uid(created_child_task.uid)
+    assert task_should_be_gone_child is None, f"Child task UID '{created_child_task.uid}' should not be found after deletion."
+    
+    task_should_be_gone_parent = api.get_task_by_global_uid(created_parent_task.uid)
+    assert task_should_be_gone_parent is None, f"Parent task UID '{created_parent_task.uid}' should not be found after deletion."
+    print("Cleanup verified: Parent and child tasks are no longer present.")
