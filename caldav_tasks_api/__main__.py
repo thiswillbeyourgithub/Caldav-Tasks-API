@@ -17,6 +17,7 @@ import click
 from loguru import logger
 
 from .caldav_tasks_api import TasksAPI
+from .utils.data import TaskData # Import TaskData
 
 
 def get_api(url: Optional[str], username: Optional[str], password: Optional[str],
@@ -130,6 +131,73 @@ def show_summary(url, username, password, nextcloud_mode, debug, list, json_outp
     except Exception as e:
         logger.exception(f"An unexpected error occurred: {e}")
         click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+
+
+@cli.command()
+@click.option('--url', help='CalDAV server URL (or set CALDAV_URL env var)')
+@click.option('--username', help='CalDAV username (or set CALDAV_USERNAME env var)')
+@click.option('--password', help='CalDAV password (or set CALDAV_PASSWORD env var)')
+@click.option('--nextcloud-mode/--no-nextcloud-mode', default=True,
+              help='Adjust URL for Nextcloud specific path [default: enabled]')
+@click.option('--debug/--no-debug', default=False,
+              help='Enable debug mode with interactive console [default: disabled]')
+@click.option('--list-uid', required=True, help='UID of the task list to add the task to.')
+@click.option('--summary', required=True, help='Summary/text of the task.')
+# Add more options for other TaskData fields as needed (e.g., --notes, --due-date)
+def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary):
+    """Add a new task to a specified task list."""
+    logger.debug(f"CLI add-task initiated with url: {'***' if url else 'from env'}, "
+                f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
+                f"debug: {debug}, list_uid: {list_uid}, summary: {summary}")
+
+    try:
+        # For adding tasks, read_only must be False.
+        # target_lists is not strictly needed for adding a single task if list_uid is known,
+        # but get_api expects it. We pass None as we are directly using list_uid.
+        api = get_api(url, username, password, nextcloud_mode, debug, target_lists=None, read_only=False)
+        
+        task_data = TaskData(
+            text=summary,
+            list_uid=list_uid
+            # Initialize other fields of TaskData as needed, e.g. notes, due_date
+            # For example:
+            # notes="Generated via CLI",
+        )
+        
+        logger.info(f"Attempting to add task '{summary}' to list '{list_uid}'...")
+        created_task = api.add_task(task_data, list_uid)
+        
+        click.echo(f"Task '{created_task.text}' added successfully!")
+        click.echo(f"  UID: {created_task.uid}")
+        click.echo(f"  List UID: {created_task.list_uid}")
+        if created_task.synced:
+            click.echo("  Status: Synced with server.")
+        else:
+            click.echo("  Status: Not synced (or sync status unknown) with server.", err=True)
+
+        if debug:
+            click.echo("Debug mode: Starting interactive console. API and task available as 'api', 'created_task'.")
+            _globals = globals().copy()
+            _locals = locals().copy()
+            _globals.update(_locals)
+            code.interact(local=_globals)
+
+    except click.UsageError as ue:
+        click.echo(f"Configuration error: {ue}", err=True)
+        raise click.Abort()
+    except ConnectionError as ce:
+        click.echo(f"Connection failed: {ce}", err=True)
+        raise click.Abort()
+    except PermissionError as pe:
+        click.echo(f"Permission error: {pe}", err=True)
+        raise click.Abort()
+    except ValueError as ve:
+        click.echo(f"Value error: {ve}", err=True) # e.g. list not found
+        raise click.Abort()
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred while adding task: {e}")
+        click.echo(f"Error adding task: {e}", err=True)
         raise click.Abort()
 
 
