@@ -30,6 +30,7 @@ Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Rad
 *   Load tasks from specified lists, parsing standard iCalendar properties.
 *   Preserve and provide access to custom `X-` properties.
 *   Create, update, and delete tasks (VTODOs) on the server.
+*   Access parent and child task relationships (`TaskData.parent_task` and `TaskData.child_tasks`).
 *   Read-only mode for applications that need to prevent modifications.
 *   Complete iCalendar (VTODO) roundtrip conversion.
 *   CLI for basic task list inspection with JSON output support.
