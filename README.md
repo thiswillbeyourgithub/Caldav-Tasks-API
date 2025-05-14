@@ -88,6 +88,9 @@ The CLI provides a simple way to interact with your CalDAV tasks. After installa
 **Available Commands:**
 
 *   `show_summary`: Connects to the server, loads task lists and tasks, and prints a summary.
+*   `add-task`: Adds a new task to a specified task list.
+*   `list-latest-tasks`: Lists the most recently created, non-completed tasks.
+*   `list-lists`: Prints a JSON list of task lists (name and UID).
 
 **Examples:**
 
@@ -109,6 +112,16 @@ caldav-tasks-api show_summary --list "Personal" --list "Work Project" --debug
 
 # Output results in JSON format (useful for scripting)
 caldav-tasks-api show_summary --json > tasks_data.json
+
+# Add a new task (using environment variables for credentials)
+# Ensure CALDAV_TASKS_API_DEFAULT_LIST_UID is set or provide --list-uid
+caldav-tasks-api add-task --summary "My new task from CLI" --read-write
+
+# List the latest 5 tasks from a specific list (output is JSON)
+caldav-tasks-api list-latest-tasks --list-uid "your-list-uid-here" --limit 5 > latest_tasks.json
+
+# List all available task lists (output is JSON)
+caldav-tasks-api list-lists > all_lists.json
 ```
 
 **Common Options:**
@@ -117,12 +130,27 @@ caldav-tasks-api show_summary --json > tasks_data.json
 *   `--username TEXT`: CalDAV username (or set CALDAV_TASKS_API_USERNAME env var)
 *   `--password TEXT`: CalDAV password (or set CALDAV_TASKS_API_PASSWORD env var)
 *   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True)
-*   `--list TEXT, -l TEXT`: Specify a task list name or UID to load (can use multiple times)
+*   `--url TEXT`: CalDAV server URL (or set CALDAV_TASKS_API_URL env var)
+*   `--username TEXT`: CalDAV username (or set CALDAV_TASKS_API_USERNAME env var)
+*   `--password TEXT`: CalDAV password (or set CALDAV_TASKS_API_PASSWORD env var)
+*   `--nextcloud-mode / --no-nextcloud-mode`: Adjust URL for Nextcloud (default: True)
 *   `--debug / --no-debug`: Enable interactive debugging console (default: False)
-*   `--json / --no-json`: Output summary information in JSON format (default: False)
-*   `--read-only / --read-write`: Operate in read-only mode (default) or allow modifications (default: read-only). This flag controls if the underlying API instance is initialized in read-only mode.
+*   `--read-only / --read-write`: Operate in read-only mode (default for `show_summary`, `list-latest-tasks`, `list-lists`) or allow modifications (required for `add-task`). This flag controls if the underlying API instance is initialized in read-only mode.
 
-**Note:** By default, CLI operations are read-only. Use the `--read-write` flag to enable modifications via the CLI, which will then use the Python API's write capabilities.
+**Specific command options:**
+*   `show_summary`:
+    *   `--list TEXT, -l TEXT`: Specify a task list name or UID to load (can use multiple times)
+    *   `--json / --no-json`: Output summary information in JSON format (default: False)
+*   `add-task`:
+    *   `--list-uid TEXT`: UID of the task list (or CALDAV_TASKS_API_DEFAULT_LIST_UID env var). Mandatory if env var not set.
+    *   `--summary TEXT`: Summary/text of the task (required).
+*   `list-latest-tasks`:
+    *   `--list-uid TEXT`: UID of the task list to filter from (or CALDAV_TASKS_API_DEFAULT_LIST_UID env var).
+    *   `--limit INTEGER`: Maximum number of tasks to return (default: 10). Output is always JSON.
+*   `list-lists`: Output is always JSON.
+
+
+**Note:** Most CLI operations that only read data default to read-only mode. For operations that modify data, like `add-task`, the `--read-write` flag must be explicitly used if you wish to make changes on the server (or ensure the API defaults to read-write if that behavior changes). The `add-task` command itself will implicitly use `read_only=False` when initializing its API instance, but the global `--read-write` or `--read-only` flag passed to the `caldav-tasks-api` group can influence this. It's best practice to be explicit with `--read-write` for modification commands if the global default is read-only.
 
 ### Python API
 
@@ -246,10 +274,15 @@ This section outlines the core features of the library and their corresponding t
 | Feature                 | Status | Description                                                           |
 | ----------------------- | ------ | --------------------------------------------------------------------- |
 | Connect to Server       | ✅     | Connect using credentials via args or environment variables           |
+| Show Summary            | ✅     | Display summary of task lists and tasks                               |
+| Add Task                | ✅     | Create a new task on the server                                       |
+| List Latest Tasks       | ✅     | List most recent non-completed tasks (JSON output)                    |
+| List Task Lists         | ✅     | List all available task lists (JSON output)                           |
 | Fetch Task Lists        | ✅     | Load calendar lists that support tasks (VTODOs)                       |
 | Fetch Tasks             | ✅     | Retrieve tasks with details (summary, due date, status, etc.)         |
-| JSON Output             | ✅     | Format output as JSON for CLI commands                                |
-| Filter by Target Lists  | ✅     | Specify which lists to operate on                                     |
+| JSON Output             | ✅     | Format output as JSON for relevant CLI commands                       |
+| Filter by Target Lists  | ✅     | Specify which lists to operate on (`show_summary`, `list-latest-tasks`) |
+| Read-Only/Read-Write    | ✅     | Control modification capabilities                                     |
 | Debug Mode              | ✅     | Enable interactive console for troubleshooting                        |
 
 ## Handling of VTODO Properties (including X-Properties)
