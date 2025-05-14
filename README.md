@@ -1,4 +1,5 @@
 # CalDAV Tasks API
+# CalDAV-Tasks-API
 
 A Python library and command-line interface (CLI) for interacting with CalDAV task lists (VTODOs). This project provides tools to connect to a CalDAV server, fetch task lists and tasks, create new tasks, and delete existing ones.
 
