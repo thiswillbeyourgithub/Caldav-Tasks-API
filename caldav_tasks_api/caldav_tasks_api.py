@@ -2,6 +2,7 @@ import pdb
 import urllib3
 import caldav
 import datetime # Added for updating timestamps
+import os # Added for environment variable access
 from caldav import DAVClient, Principal, Calendar, Todo
 from caldav.elements import dav, ical
 from icalendar import Calendar as IcsCalendar  # For fallback parsing
@@ -329,34 +330,70 @@ class TasksAPI:
         logger.debug(f"Task with global UID {task_uid} not found across any list.")
         return None
 
-    def add_task(self, task_data: TaskData, list_uid: str) -> TaskData:
+    def add_task(self, task_data: TaskData, list_uid: Optional[str] = None) -> TaskData:
         """
         Adds a new task to the specified task list on the server.
+
+        The list UID can be determined in the following order of precedence:
+        1. The `list_uid` argument provided to this method.
+        2. The `task_data.list_uid` attribute if `list_uid` argument is not provided.
+        3. The `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable if neither of the above is set.
+
+        Args:
+            task_data: The TaskData object representing the task to add.
+            list_uid: Optional. The UID of the task list to add the task to.
+                      If not provided, `task_data.list_uid` or the environment variable will be used.
+
+        Returns:
+            The TaskData object representing the added task, updated with server information.
+
+        Raises:
+            PermissionError: If the API is in read-only mode.
+            ValueError: If the task list UID cannot be determined or the specified list is not found.
         """
         if self.read_only:
-            logger.error("Attempt to add task in read-only mode.")
             raise PermissionError("API is in read-only mode. Adding tasks is not allowed.")
+
+        # Determine the effective list UID based on precedence
+        effective_list_uid = list_uid  # 1. Direct argument
+        logger.trace(f"add_task initial list_uid_param: '{effective_list_uid}'")
+        if not effective_list_uid:
+            effective_list_uid = task_data.list_uid  # 2. From TaskData instance
+            logger.trace(f"add_task fallback to task_data.list_uid: '{effective_list_uid}'")
+        if not effective_list_uid:
+            effective_list_uid = os.environ.get('CALDAV_TASKS_API_DEFAULT_LIST_UID') # 3. From environment variable
+            logger.trace(f"add_task fallback to env var CALDAV_TASKS_API_DEFAULT_LIST_UID: '{effective_list_uid}'")
+
+        if not effective_list_uid:
+            err_msg = "Task list UID must be specified via 'list_uid' argument, TaskData.list_uid, or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable."
+            logger.error(err_msg)
+            raise ValueError(err_msg)
+
+        # Ensure task_data.list_uid is consistent with the resolved UID for to_ical() and local storage.
+        if task_data.list_uid != effective_list_uid:
+            logger.debug(f"Updating TaskData instance's list_uid from '{task_data.list_uid}' to '{effective_list_uid}' to match resolved UID.")
+            task_data.list_uid = effective_list_uid
         
-        logger.info(f"Attempting to add task (UID: {task_data.uid if task_data.uid else 'new'}) to list UID: {list_uid}")
+        logger.info(f"Attempting to add task (UID: {task_data.uid if task_data.uid else 'new'}) to list UID: {effective_list_uid}")
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before adding task.")
             self._fetch_raw_calendars()
 
         target_raw_calendar: Optional[Calendar] = None
         for cal in self.raw_calendars:
-            if str(cal.id) == list_uid:
+            if str(cal.id) == effective_list_uid:
                 target_raw_calendar = cal
                 logger.debug(f"Found target calendar '{cal.name}' (ID: {cal.id}) for adding task.")
                 break
 
         if not target_raw_calendar:
-            logger.error(f"Task list (calendar) with UID '{list_uid}' not found for adding task.")
-            raise ValueError(f"Task list (calendar) with UID '{list_uid}' not found.")
+            logger.error(f"Task list (calendar) with UID '{effective_list_uid}' not found for adding task.")
+            raise ValueError(f"Task list (calendar) with UID '{effective_list_uid}' not found.")
 
         # Save the desired text that we want to preserve from the client side
-        desired_text = task_data.text
+        desired_text = task_data.text # This should be correct as task_data is authoritative for content fields
         
-        vtodo_ical_string = task_data.to_ical()
+        vtodo_ical_string = task_data.to_ical() # task_data.list_uid is now correct
         logger.debug(
             f"  Attempting to save new VTODO to calendar '{target_raw_calendar.name}':\n{vtodo_ical_string[:200]}..."
         )
@@ -372,7 +409,8 @@ class TasksAPI:
             # We should re-parse it to get the authoritative UID and other server-set fields.
             if new_todo_obj.data:
                 logger.debug("Re-parsing task data from server response to get authoritative UID and other fields.")
-                updated_task_data = TaskData.from_ical(new_todo_obj.data, list_uid=list_uid)
+                # Use effective_list_uid for consistency when parsing server response
+                updated_task_data = TaskData.from_ical(new_todo_obj.data, list_uid=effective_list_uid)
                 # updated_task_data.synced is True if from_ical parsed a UID, which is expected.
                 
                 # Update the original task_data instance with server-authoritative values
@@ -398,7 +436,8 @@ class TasksAPI:
                 # Fetch the task directly to verify it's updated correctly
                 fresh_task_obj = target_raw_calendar.todo_by_uid(task_data.uid)
                 if fresh_task_obj and fresh_task_obj.data:
-                    fresh_task_data = TaskData.from_ical(fresh_task_obj.data, list_uid=task_data.list_uid)
+                    # Use effective_list_uid here as well for consistency
+                    fresh_task_data = TaskData.from_ical(fresh_task_obj.data, list_uid=effective_list_uid)
                     if fresh_task_data.text != desired_text:
                         logger.warning(f"  Final verification: Server still has different text after fresh fetch.")
                         logger.warning(f"  Server: '{fresh_task_data.text}', Desired: '{desired_text}'")

@@ -12,6 +12,7 @@ import os
 import json
 import code  # For interactive debugging
 from typing import List, Optional
+import os # Added for environment variable access
 
 import click
 from loguru import logger
@@ -142,7 +143,8 @@ def show_summary(url, username, password, nextcloud_mode, debug, list, json_outp
               help='Adjust URL for Nextcloud specific path [default: enabled]')
 @click.option('--debug/--no-debug', default=False,
               help='Enable debug mode with interactive console [default: disabled]')
-@click.option('--list-uid', default=None, help='UID of the task list to filter tasks from (optional).')
+@click.option('--list-uid', default=None, envvar='CALDAV_TASKS_API_DEFAULT_LIST_UID',
+              help='UID of the task list to filter tasks from. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set (optional).')
 @click.option('--limit', default=10, type=int, help='Maximum number of tasks to return [default: 10].')
 def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, limit):
     """
@@ -235,7 +237,8 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
               help='Adjust URL for Nextcloud specific path [default: enabled]')
 @click.option('--debug/--no-debug', default=False,
               help='Enable debug mode with interactive console [default: disabled]')
-@click.option('--list-uid', required=True, help='UID of the task list to add the task to.') # Keep this for add_task
+@click.option('--list-uid', required=False, envvar='CALDAV_TASKS_API_DEFAULT_LIST_UID',
+              help='UID of the task list to add the task to. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set. Mandatory if env var not set.')
 @click.option('--summary', required=True, help='Summary/text of the task.')
 # Add more options for other TaskData fields as needed (e.g., --notes, --due-date)
 def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary): # list_uid is specific to this command
@@ -250,15 +253,20 @@ def add_task(url, username, password, nextcloud_mode, debug, list_uid, summary):
         # but get_api expects it. We pass None as we are directly using list_uid.
         api = get_api(url, username, password, nextcloud_mode, debug, target_lists=None, read_only=False)
         
+        # Initialize TaskData.list_uid with an empty string if list_uid from CLI/env is None,
+        # as TaskData.list_uid expects a string. The api.add_task method will handle final resolution.
+        task_data_list_uid = list_uid if list_uid is not None else ""
         task_data = TaskData(
             text=summary,
-            list_uid=list_uid
+            list_uid=task_data_list_uid
             # Initialize other fields of TaskData as needed, e.g. notes, due_date
             # For example:
             # notes="Generated via CLI",
         )
         
-        logger.info(f"Attempting to add task '{summary}' to list '{list_uid}'...")
+        # Pass the original list_uid from CLI/env (which could be None) to api.add_task.
+        # The api.add_task method will resolve the definitive list_uid using its precedence logic.
+        logger.info(f"Attempting to add task '{summary}' (CLI list_uid: '{list_uid}')...")
         created_task = api.add_task(task_data, list_uid)
         
         click.echo(f"Task '{created_task.text}' added successfully!")
