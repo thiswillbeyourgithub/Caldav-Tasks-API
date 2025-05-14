@@ -247,44 +247,6 @@ else:
 
 ```
 
-## Supported Operations & Testing Status
-
-This section outlines the core features of the library and their corresponding test coverage within the automated test suite.
-
-### Python API Features
-
-| Feature                 | Status | Description                                                           |
-| ----------------------- | ------ | --------------------------------------------------------------------- |
-| Connect to Server       | ✅     | Connect using credentials via constructor or environment variables    |
-| Fetch Task Lists        | ✅     | Load calendar lists that support tasks (VTODOs)                       |
-| Fetch Tasks             | ✅     | Retrieve tasks with details (summary, due date, status, etc.)         |
-| Create Task             | ✅     | Create new tasks on the server                                        |
-| Update Task             | ✅     | Modify existing tasks                                                 |
-| Delete Task             | ✅     | Remove tasks from the server                                          |
-| Read-Only Mode          | ✅     | Prevent modifications to the server                                   |
-| X-Property Handling     | ✅     | Support for custom task properties                                    |
-| iCal Roundtrip          | ✅     | Consistent conversion to/from iCalendar format                        |
-| Filter by Target Lists  | ✅     | Specify which lists to operate on                                     |
-| Debug Mode              | ✅     | Enable PDB for certain exceptions                                     |
-
-### Command-Line Interface Features
-
-**Note: By default, the CLI operates in read-only mode. The `--read-write` flag can be used to allow modifications.**
-
-| Feature                 | Status | Description                                                           |
-| ----------------------- | ------ | --------------------------------------------------------------------- |
-| Connect to Server       | ✅     | Connect using credentials via args or environment variables           |
-| Show Summary            | ✅     | Display summary of task lists and tasks                               |
-| Add Task                | ✅     | Create a new task on the server                                       |
-| List Latest Tasks       | ✅     | List most recent non-completed tasks (JSON output)                    |
-| List Task Lists         | ✅     | List all available task lists (JSON output)                           |
-| Fetch Task Lists        | ✅     | Load calendar lists that support tasks (VTODOs)                       |
-| Fetch Tasks             | ✅     | Retrieve tasks with details (summary, due date, status, etc.)         |
-| JSON Output             | ✅     | Format output as JSON for relevant CLI commands                       |
-| Filter by Target Lists  | ✅     | Specify which lists to operate on (`show_summary`, `list-latest-tasks`) |
-| Read-Only/Read-Write    | ✅     | Control modification capabilities                                     |
-| Debug Mode              | ✅     | Enable interactive console for troubleshooting                        |
-
 ## Handling of VTODO Properties (including X-Properties)
 
 The library aims to parse standard VTODO (iCalendar task) properties into the fields of the `TaskData` dataclass (e.g., `summary`, `due`, `status`, `description`).
