@@ -1,4 +1,4 @@
-[![PyPI version](https://badge.fury.io/py/caldavtasksapi.svg)](https://badge.fury.io/py/caldavtasksapi)
+[![PyPI version](https://badge.fury.io/py/caldav-tasks-api.svg)](https://badge.fury.io/py/caldav-tasks-api)
 
 # CalDAV-Tasks-API
 
