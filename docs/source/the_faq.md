@@ -52,7 +52,7 @@ A key feature is the handling of non-standard properties, particularly those pre
     *   **Dictionary-like access:** You can get/set properties using their original, raw keys (e.g., `task.x_properties['X-APPLE-SORT-ORDER']`).
     *   **Attribute-style access:** For convenience, `X-` properties can be accessed using normalized attribute names. The `X-` prefix is removed, and hyphens are converted to underscores (e.g., `task.x_properties.apple_sort_order`). This is case-insensitive on the query.
     *   **Containment checking:** The `in` operator is supported for case-insensitive key checking (e.g., `if 'X-APPLE-SORT-ORDER' in task.x_properties:`).
-*   **Round-Tripping:** When a `TaskData` object is converted back to an iCalendar string (via `to_ical()`), all stored `X-` properties are included with their original keys. This ensures that custom data is not lost during iCal conversion.
+*   **Round-Tripping:** When a `TaskData` object is converted back to an iCalendar string (via `to_ical()`), all stored `X-` properties are included with their original keys. This aims to preserve custom data during iCal conversion. (Note: values containing certain iCalendar special characters like colons or double quotes may require additional escaping beyond the current implementation for perfect round-tripping with all CalDAV servers/clients, as per RFC 5545.)
 *   **Dictionary conversion:** Both TaskData and TaskListData objects support conversion to dictionaries via the `to_dict()` method, which properly handles the conversion of X-properties.
 
 This robust handling of `X-` properties is crucial for interoperability and for ensuring that application-specific metadata managed by clients like Tasks.org is not inadvertently discarded.
