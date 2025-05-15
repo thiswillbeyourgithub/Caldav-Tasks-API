@@ -8,6 +8,17 @@ Full documentation available at [caldavtasksapi.readthedocs.io](https://caldavta
 
 A Python library and command-line interface (CLI) for interacting with CalDAV task lists (VTODOs). This project provides tools to connect to a CalDAV server, fetch task lists and tasks, create new tasks, and delete existing ones.
 
+## Table of Contents
+
+- [License](#license)
+- [Motivation and Purpose](#motivation-and-purpose)
+- [Compatibility](#compatibility)
+- [Features](#features)
+- [Installation](#installation)
+- [Handling of VTODO Properties (including X-Properties)](#handling-of-vtodo-properties-including-x-properties)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details.
