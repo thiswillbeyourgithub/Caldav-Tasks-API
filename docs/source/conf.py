@@ -5,20 +5,20 @@ import sys
 seen = []
 
 
-def skip_imported(app, what, name, obj, skip, options):
-    if hasattr(obj, "__module__"):
-        if not obj.__module__.startswith("caldav_tasks_api"):
-            return True
-    return skip
+# def skip_imported(app, what, name, obj, skip, options):
+#     if hasattr(obj, "__module__"):
+#         if not obj.__module__.startswith("caldav_tasks_api"):
+#             return True
+#     return skip
 
 
 # Add the project root and extension directories to the Python path
 sys.path.insert(0, os.path.abspath("./../.."))
 
 
-def setup(app):
-    # don't include docstrings of objects that are not part of caldav-tasks-api
-    app.connect("autodoc-skip-member", skip_imported)
+# def setup(app):
+#     # don't include docstrings of objects that are not part of caldav-tasks-api
+#     app.connect("autodoc-skip-member", skip_imported)
 
 
 project = "Caldav-Tasks-API"
