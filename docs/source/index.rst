@@ -5,6 +5,7 @@ Caldav-Tasks-API
    :maxdepth: 2
 
    readme
+   usage
    examples
    tests
    api
