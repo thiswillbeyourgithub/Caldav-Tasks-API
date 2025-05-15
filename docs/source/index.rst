@@ -1,6 +1,8 @@
 Caldav-Tasks-API
 ================
 
+The is the official documentatino for [Caldav-Tasks-API](https://github.com/thiswillbeyourgithub/Caldav-Tasks-API), a python library to make it easier to handle caldav's tasks and TODOs.
+
 .. toctree::
    :maxdepth: 2
 
