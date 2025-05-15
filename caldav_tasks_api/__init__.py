@@ -6,10 +6,10 @@ and the data structures TaskListData and TaskData for representing task lists an
 """
 
 # Initialize logging configuration as early as possible
-from .utils import logging_config # This will run setup_logging()
+from caldav_tasks_api.utils import logging_config  # This will run setup_logging()
 
-from .caldav_tasks_api import TasksAPI
-from .utils.data import TaskData, TaskListData
+from caldav_tasks_api import TasksAPI
+from caldav_tasks_api.utils.data import TaskData, TaskListData
 
 VERSION = TasksAPI.VERSION
 
@@ -17,6 +17,6 @@ __all__ = [
     "TasksAPI",
     "TaskData",
     "TaskListData",
-    "logging_config", # Optionally expose logger or config
+    "logging_config",  # Optionally expose logger or config
     "VERSION",
 ]
