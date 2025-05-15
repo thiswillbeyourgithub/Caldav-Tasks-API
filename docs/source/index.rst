@@ -9,6 +9,7 @@ Caldav-Tasks-API
    examples
    tests
    api
+   faq
 
 .. include:: README.md
    :parser: myst_parser.sphinx_
