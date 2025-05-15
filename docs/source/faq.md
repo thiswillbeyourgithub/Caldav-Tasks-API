@@ -1,9 +1,9 @@
 FAQ
 ===
 
-**Q: When does the library upload data to the CalDAV server? What triggers these uploads?**
+## When does the library upload data to the CalDAV server? What triggers these uploads?
 
-A: Data uploads (i.e., changes to your tasks on the server) occur only when specific methods of the `TasksAPI` class are called. These methods interact directly with the CalDAV server to perform the requested operations. There is no automatic background synchronization or queuing of changes.
+ata uploads (i.e., changes to your tasks on the server) occur only when specific methods of the `TasksAPI` class are called. These methods interact directly with the CalDAV server to perform the requested operations. There is no automatic background synchronization or queuing of changes.
 
 The primary methods that trigger uploads are:
 
@@ -15,9 +15,9 @@ The `TasksAPI.load_remote_data()` method, on the other hand, is responsible for 
 
 In summary, uploads are explicit operations you initiate by calling `add_task`, `update_task`, or `delete_task`.
 
-**Q: What is the read-only mode and when should I use it?**
+## What is the read-only mode and when should I use it?
 
-A: The read-only mode (`read_only=True` when initializing `TasksAPI`) prevents any modifications to the server. When enabled:
+The read-only mode (`read_only=True` when initializing `TasksAPI`) prevents any modifications to the server. When enabled:
 
 *   `add_task()`, `update_task()`, and `delete_task()` will raise a `PermissionError` if called.
 *   All data retrieval methods function normally.
@@ -40,7 +40,7 @@ api = TasksAPI(
 )
 ```
 
-**Q: How are VTODO properties and X-Properties handled?**
+## How are VTODO properties and X-Properties handled?
 
 The library aims to parse standard VTODO (iCalendar task) properties into the fields of the `TaskData` dataclass (e.g., `summary`, `due`, `status`, `description`).
 
