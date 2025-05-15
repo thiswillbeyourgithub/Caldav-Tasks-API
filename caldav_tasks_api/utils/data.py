@@ -3,12 +3,8 @@ from __future__ import annotations
 import datetime
 import random
 from dataclasses import dataclass, field, fields  # Added fields
-from typing import Optional, Dict, TYPE_CHECKING  # Added Optional and Dict
+from typing import Optional, Dict
 from uuid import uuid4
-
-if TYPE_CHECKING:
-    from ..caldav_tasks_api import TasksAPI
-
 
 
 @dataclass
@@ -122,7 +118,7 @@ class XProperties:
     def items(self):
         """Allows iteration like a dictionary (e.g., for key, value in x_props.items())."""
         return self._raw_properties.items()
-        
+
     def __contains__(self, key: str) -> bool:
         """
         Case-insensitive check if a key exists in the X-properties.
@@ -130,29 +126,32 @@ class XProperties:
         """
         if key in self._raw_properties:
             return True
-            
+
         # Case-insensitive lookup
         key_lower = key.lower()
         for raw_key in self._raw_properties:
             if raw_key.lower() == key_lower:
                 return True
-                
+
         # Handle the case where the prefix (X-...) is the same but the UUID part differs in case
         # Many servers might normalize the UUID part to all uppercase or all lowercase
-        parts = key.split('-', 2)  # Split on first two hyphens (e.g., X-TEST-PROP-uuid)
+        parts = key.split("-", 2)  # Split on first two hyphens (e.g., X-TEST-PROP-uuid)
         if len(parts) >= 3:
-            prefix = '-'.join(parts[0:2])  # X-TEST
+            prefix = "-".join(parts[0:2])  # X-TEST
             uuid_part = parts[2]  # PROP-uuid
-            
+
             for raw_key in self._raw_properties:
-                raw_parts = raw_key.split('-', 2)
+                raw_parts = raw_key.split("-", 2)
                 if len(raw_parts) >= 3:
-                    raw_prefix = '-'.join(raw_parts[0:2])
+                    raw_prefix = "-".join(raw_parts[0:2])
                     raw_uuid_part = raw_parts[2]
-                    
-                    if prefix.lower() == raw_prefix.lower() and uuid_part.lower() == raw_uuid_part.lower():
+
+                    if (
+                        prefix.lower() == raw_prefix.lower()
+                        and uuid_part.lower() == raw_uuid_part.lower()
+                    ):
                         return True
-                        
+
         return False
 
     def __repr__(self) -> str:
@@ -271,7 +270,11 @@ class TaskData:
         children: list[TaskData] = []
         if self._api_reference and self.uid:  # self.uid must exist to be a parent
             for task_list in self._api_reference.task_lists:
-                for task_item in task_list.tasks: # Renamed 'task' to 'task_item' to avoid conflict with `TaskData` type hint in some contexts
+                for (
+                    task_item
+                ) in (
+                    task_list.tasks
+                ):  # Renamed 'task' to 'task_item' to avoid conflict with `TaskData` type hint in some contexts
                     if task_item.parent == self.uid:
                         children.append(task_item)
         return children
@@ -315,7 +318,9 @@ class TaskData:
         # Add any other X-properties
         for key, value in self.x_properties.items():
             # Escape special characters that might interfere with iCal parsing
-            escaped_value = value.replace("\n", "\\n").replace(",", "\\,").replace(";", "\\;")
+            escaped_value = (
+                value.replace("\n", "\\n").replace(",", "\\,").replace(";", "\\;")
+            )
             ical += f"{key}:{escaped_value}\n"
 
         # attachments are not standard in VTODO, would need X-PROP or ATTACH property
@@ -362,7 +367,7 @@ class TaskData:
             end_idx = ical_str.find("END:VTODO")
             if start_idx != -1 and end_idx != -1:
                 vtodo_content = ical_str[start_idx:end_idx]
-                
+
         # First, unfold the iCal content (RFC 5545 section 3.1)
         # Lines that start with whitespace are a continuation of the previous line
         unfolded_lines = []
@@ -372,7 +377,7 @@ class TaskData:
                     unfolded_lines[-1] += line[1:]  # Skip the leading whitespace
             else:
                 unfolded_lines.append(line)
-        
+
         # Helper to parse property values, handling potential parameters (e.g., DUE;VALUE=DATE:...)
         def get_value(line: str) -> str:
             return line.split(":", 1)[-1]
@@ -428,7 +433,9 @@ class TaskData:
             # Capture any other X- properties
             elif prop_name.startswith("X-"):
                 # Unescape special characters in the value
-                unescaped_value = value.replace("\\n", "\n").replace("\\,", ",").replace("\\;", ";")
+                unescaped_value = (
+                    value.replace("\\n", "\n").replace("\\,", ",").replace("\\;", ";")
+                )
                 # task.x_properties is an XProperties instance, so this uses XProperties.__setitem__
                 task.x_properties[prop_part] = (
                     unescaped_value  # Store with original casing and params
