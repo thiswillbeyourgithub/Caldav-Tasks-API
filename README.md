@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/caldav-tasks-api.svg)](https://badge.fury.io/py/caldav-tasks-api)
+
 *(Full documentation available at [caldavtasksapi.readthedocs.io](https://caldavtasksapi.readthedocs.io/en/latest/#))*
 
 # CalDAV-Tasks-API
