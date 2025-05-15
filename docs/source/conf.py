@@ -15,7 +15,6 @@ seen = []
 
 # Add the project root and extension directories to the Python path
 sys.path.insert(0, os.path.abspath("./../.."))
-sys.path.insert(0, str(Path("../..", "caldav_tasks_api").resolve()))
 
 
 # def setup(app):
