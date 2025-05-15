@@ -13,3 +13,4 @@ push = false
 "bumpver.toml" = ['current_version = "{version}"']
 "setup.py" = ['version="{version}"']
 "caldav_tasks_api/caldav_tasks_api.py" = ['VERSION: str = "{version}"']
+"docs/source/conf.py" = ['release = "{version}"']
