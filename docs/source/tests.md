@@ -6,54 +6,26 @@ correctness of its core functionalities. Tests are implemented using
 `pytest` and interact with a live CalDAV server, requiring specific
 environment variables for credentials and server details.
 
-Key Tested Features
--------------------
+The table below provides a summary of the features covered by the automated tests. A ✅ indicates that the feature is covered by one or more tests.
 
-The following features are covered by automated tests:
+Test Coverage Summary
+---------------------
 
-**Python API (`TasksAPI`):**
-
-*   **Connection & Data Fetching:**
-    *   Fetching and populating task lists (`test_fetch_task_lists`).
-    *   Finding and validating tasks within fetched lists
-(`test_find_tasks_in_lists`).
-
-*   **Task CRUD Operations:**
-    *   Creating a new task and subsequently deleting it
-(`test_create_and_delete_task`).
-    *   Creating a single task without immediate deletion
-(`test_create_single_task`).
-    *   Creating a task, renaming (updating) it, and verifying the change
-(`test_create_and_rename_task`).
-    *   Creating a task, adding/updating an X-property, and then deleting
-the task (`test_create_update_xprop_delete_task`).
-
-*   **Read-Only Mode:**
-    *   Attempting to add a task in read-only mode correctly raises
-`PermissionError` (`test_add_task_in_read_only_mode`).
-    *   Attempting to delete a task in read-only mode correctly raises
-`PermissionError` (`test_delete_task_in_read_only_mode`).
-    *   Attempting to update a task in read-only mode correctly raises
-`PermissionError` (`test_update_task_in_read_only_mode`).
-
-*   **Data Handling & Conversion:**
-    *   `TaskData.to_dict()` method correctly converts task objects to
-dictionaries (`test_task_to_dict`).
-    *   `TaskData.to_ical()` and `TaskData.from_ical()` methods ensure
-correct iCalendar roundtrip conversion for task properties, including
-X-properties (`test_task_ical_roundtrip`).
-
-*   **Task Relationships:**
-    *   Establishing and retrieving parent-child relationships between
-tasks, including verification of `parent_task` and `child_tasks` properties
-after server interaction and data reload
-(`test_task_parent_child_relationships`).
-
-**Command-Line Interface (CLI):**
-
-*   The `show-summary --json` command runs successfully and produces output,
-indicating basic CLI functionality and environment variable usage
-(`test_cli_show_summary_json_runs_successfully`).
+| Area     | Feature Tested                                      | Test Function(s)                                 | Status |
+|----------|-----------------------------------------------------|--------------------------------------------------|--------|
+| TasksAPI | Fetching & populating task lists                    | `test_fetch_task_lists`                          |   ✅   |
+| TasksAPI | Finding tasks in lists                              | `test_find_tasks_in_lists`                       |   ✅   |
+| TasksAPI | Create and delete task                              | `test_create_and_delete_task`                    |   ✅   |
+| TasksAPI | Create single task                                  | `test_create_single_task`                        |   ✅   |
+| TasksAPI | Create and rename/update task                       | `test_create_and_rename_task`                    |   ✅   |
+| TasksAPI | Create, update X-property, delete task              | `test_create_update_xprop_delete_task`           |   ✅   |
+| TasksAPI | Add task attempt fails (read-only mode)             | `test_add_task_in_read_only_mode`                |   ✅   |
+| TasksAPI | Delete task attempt fails (read-only mode)          | `test_delete_task_in_read_only_mode`             |   ✅   |
+| TasksAPI | Update task attempt fails (read-only mode)          | `test_update_task_in_read_only_mode`             |   ✅   |
+| TasksAPI | `TaskData.to_dict()` conversion                     | `test_task_to_dict`                              |   ✅   |
+| TasksAPI | `TaskData` iCal roundtrip (to_ical/from_ical)       | `test_task_ical_roundtrip`                       |   ✅   |
+| TasksAPI | Parent-child task relationships                     | `test_task_parent_child_relationships`           |   ✅   |
+| CLI      | `show-summary --json` command runs successfully     | `test_cli_show_summary_json_runs_successfully`   |   ✅   |
 
 Setup and Fixtures
 ------------------
