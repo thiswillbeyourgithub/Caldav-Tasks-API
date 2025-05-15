@@ -1,4 +1,4 @@
-# API Documentation
+# Guide
 
 This document outlines the primary functionalities provided by the `caldav-tasks-api` package, both through its Command-Line Interface (CLI) and its Python API.
 
