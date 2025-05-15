@@ -13,7 +13,7 @@ def skip_imported(app, what, name, obj, skip, options):
             return True
         else:
             seen.append(objid)
-        if not obj.__module__.startswith("caldav-tasks-api"):
+        if not obj.__module__.startswith("caldav_tasks_api"):
             return True
     return skip
 
