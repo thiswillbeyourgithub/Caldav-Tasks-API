@@ -14,7 +14,6 @@ A Python library and command-line interface (CLI) for interacting with CalDAV ta
 - [Compatibility](#compatibility)
 - [Features](#features)
 - [Installation](#installation)
-- [Handling of VTODO Properties (including X-Properties)](#handling-of-vtodo-properties-including-x-properties)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
@@ -73,23 +72,6 @@ Alternatively, you can install from source:
     # For development with additional dev dependencies:
     uv pip install -e ".[dev]"
     ```
-
-## Handling of VTODO Properties (including X-Properties)
-
-The library aims to parse standard VTODO (iCalendar task) properties into the fields of the `TaskData` dataclass (e.g., `summary`, `due`, `status`, `description`).
-
-A key feature is the handling of non-standard properties, particularly those prefixed with `X-` (e.g., `X-APPLE-SORT-ORDER`, `X-TASKS-ORG-ORDER`, `X-NEXTCLOUD-SYSTEM-CALENDAR-ORDER`). These properties are often used by specific CalDAV clients or servers to store custom metadata.
-
-*   **Preservation:** All `X-` properties encountered in a VTODO component are preserved.
-*   **Storage:** They are stored in the `TaskData.x_properties` attribute. This attribute is an instance of the `XProperties` class.
-*   **Access:** The `XProperties` class offers flexible access:
-    *   **Dictionary-like access:** You can get/set properties using their original, raw keys (e.g., `task.x_properties['X-APPLE-SORT-ORDER']`).
-    *   **Attribute-style access:** For convenience, `X-` properties can be accessed using normalized attribute names. The `X-` prefix is removed, and hyphens are converted to underscores (e.g., `task.x_properties.apple_sort_order`). This is case-insensitive on the query.
-    *   **Containment checking:** The `in` operator is supported for case-insensitive key checking (e.g., `if 'X-APPLE-SORT-ORDER' in task.x_properties:`).
-*   **Round-Tripping:** When a `TaskData` object is converted back to an iCalendar string (via `to_ical()`), all stored `X-` properties are included with their original keys. This ensures that custom data is not lost during iCal conversion.
-*   **Dictionary conversion:** Both TaskData and TaskListData objects support conversion to dictionaries via the `to_dict()` method, which properly handles the conversion of X-properties.
-
-This robust handling of `X-` properties is crucial for interoperability and for ensuring that application-specific metadata managed by clients like Tasks.org is not inadvertently discarded.
 
 ## Contributing
 
