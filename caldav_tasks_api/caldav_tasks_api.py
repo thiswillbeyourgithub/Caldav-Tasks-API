@@ -4,7 +4,6 @@ import caldav
 import datetime  # Added for updating timestamps
 import os  # Added for environment variable access
 from caldav import DAVClient, Principal, Calendar, Todo
-from caldav.elements import dav, ical
 from icalendar import Calendar as IcsCalendar  # For fallback parsing
 from typing import List, Optional
 
