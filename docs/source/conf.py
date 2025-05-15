@@ -2,7 +2,7 @@ import os
 import sys
 
 
-project = "caldav-tasks-api"
+project = "Caldav-Tasks-API"
 copyright = "2025, thiswillbeyourgithub"
 author = "thiswillbeyourgithub"
 release = "1.0.0"
@@ -79,4 +79,3 @@ html_theme_options = {
 }
 # html_static_path = ["_static"]
 # html_css_files = ["custom.css"]
-
