@@ -1,6 +1,3 @@
-Here's the rewritten content in Markdown format:
-
-```markdown
 # Examples
 
 ## Python API Usage
@@ -109,4 +106,3 @@ Key changes made:
 3. Maintained all the code structure and comments exactly as they were
 4. Preserved all the functionality and examples
 5. Kept the same formatting for the example code
-```
