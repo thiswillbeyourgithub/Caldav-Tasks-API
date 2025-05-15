@@ -19,7 +19,7 @@ python -m caldav_tasks_api <command> [options]
 > **Note:**
 > Common CLI options for specifying CalDAV server URL, username, and password can be provided directly on the command line (e.g., `--url`, `--username`, `--password`) or through environment variables (`CALDAV_TASKS_API_URL`, `CALDAV_TASKS_API_USERNAME`, `CALDAV_TASKS_API_PASSWORD`).
 >
-> Most CLI commands that only read data default to operating in read-only mode. For operations that modify data, like `add-task`, the `--read-write` flag must be used.
+> The `show_summary` command defaults to read-only but can be explicitly set to allow modifications using the `--read-write` flag. The `add-task` command inherently modifies data and operates in write mode by default (it does not use a `--read-write` flag). Other commands like `list-lists` and `list-latest-tasks` are strictly read-only.
 >
 > Use `caldav-tasks-api --help` or `caldav-tasks-api <command> --help` for full details.
 
@@ -41,10 +41,10 @@ caldav-tasks-api show_summary --url <your_url> --username <user> --password <pas
 
 #### `list-lists`
 
-**Description:** Fetches and prints a JSON-formatted list of all available task lists (calendars that support VTODOs). Each entry includes the list's name and UID.
+**Description:** Fetches and prints a JSON-formatted list of all available task lists (calendars that support VTODOs). Each entry includes the list's name and UID. This command is inherently read-only.
 
 **Key Options:**
-- `--read-only` (default): This command only reads data.
+_(This command has no specific key options beyond the common connection ones like `--url`, `--username`, etc.)_
 
 **Example:**
 ```bash
@@ -53,26 +53,25 @@ caldav-tasks-api list-lists --url <your_url> --username <user> --password <pass>
 
 #### `add-task`
 
-**Description:** Adds a new task to a specified task list on the CalDAV server.
+**Description:** Adds a new task to a specified task list on the CalDAV server. This command inherently operates with write permissions to the server.
 
 **Key Options:**
 - `--list-uid TEXT`: The UID of the task list where the task will be added. This is mandatory if the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable is not set.
 - `--summary TEXT`: The summary or title text for the new task. This is required.
-- `--read-write`: Must be specified to allow this command to modify server data.
+Other task properties like notes, due date, etc., can be added via future CLI enhancements.
 
 **Example:**
 ```bash
-caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries" --read-write
+caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries"
 ```
 
 #### `list-latest-tasks`
 
-**Description:** Lists the most recently created, non-completed tasks from a specific task list (or all lists if `--list-uid` is not specified and the default environment variable isn't set). Tasks are sorted by their creation date, and the output is in JSON format.
+**Description:** Lists non-completed tasks from a specific task list (or all lists if `--list-uid` is not specified and the default environment variable isn't set). Tasks are selected by their creation date (most recent first), up to the specified limit. The final output in JSON then lists these selected tasks, ordered from oldest to newest among the selection. This command is inherently read-only.
 
 **Key Options:**
 - `--list-uid TEXT`: UID of the task list to filter tasks from. If not provided, uses the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable if set.
 - `--limit INTEGER`: The maximum number of tasks to return (default is 10).
-- `--read-only` (default): This command only reads data.
 
 **Example:**
 ```bash
