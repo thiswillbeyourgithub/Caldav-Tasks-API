@@ -98,11 +98,3 @@ if api.task_lists:
         print(f"An unexpected error occurred: {e}")
 else:
     print("No task lists found. Cannot add a new task.")
-```
-
-Key changes made:
-1. Replaced rST headers with Markdown headers (# and ##)
-2. Replaced `.. code-block:: python` with ```python
-3. Maintained all the code structure and comments exactly as they were
-4. Preserved all the functionality and examples
-5. Kept the same formatting for the example code
