@@ -18,14 +18,14 @@ Test Coverage Summary
 | TasksAPI | Create and delete task                              | `test_create_and_delete_task`                    |   ✅   |
 | TasksAPI | Create single task                                  | `test_create_single_task`                        |   ✅   |
 | TasksAPI | Create and rename/update task                       | `test_create_and_rename_task`                    |   ✅   |
-| TasksAPI | Create, update X-property, delete task              | `test_create_update_xprop_delete_task`           |   ✅   |
+| TasksAPI | `TaskData.to_dict()` conversion                     | `test_task_to_dict`                              |   ✅   |
+| CLI      | `show-summary --json` command runs successfully     | `test_cli_show_summary_json_runs_successfully`   |   ✅   |
 | TasksAPI | Add task attempt fails (read-only mode)             | `test_add_task_in_read_only_mode`                |   ✅   |
 | TasksAPI | Delete task attempt fails (read-only mode)          | `test_delete_task_in_read_only_mode`             |   ✅   |
 | TasksAPI | Update task attempt fails (read-only mode)          | `test_update_task_in_read_only_mode`             |   ✅   |
-| TasksAPI | `TaskData.to_dict()` conversion                     | `test_task_to_dict`                              |   ✅   |
+| TasksAPI | Create, update X-property, delete task              | `test_create_update_xprop_delete_task`           |   ✅   |
 | TasksAPI | `TaskData` iCal roundtrip (to_ical/from_ical)       | `test_task_ical_roundtrip`                       |   ✅   |
 | TasksAPI | Parent-child task relationships                     | `test_task_parent_child_relationships`           |   ✅   |
-| CLI      | `show-summary --json` command runs successfully     | `test_cli_show_summary_json_runs_successfully`   |   ✅   |
 
 Setup and Fixtures
 ------------------
