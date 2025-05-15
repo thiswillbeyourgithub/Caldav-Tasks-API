@@ -86,7 +86,7 @@ caldav-tasks-api list-lists > all_lists.json
 
 ## Python API
 
-The Python API offers more fine-grained control. An example of its usage can be found in the documentation in the [examples](./examples.md).
+The Python API offers more fine-grained control. An example of its usage can be found in the documentation in the [examples](https://caldavtasksapi.readthedocs.io/en/stable/examples.html).
 
 > **Note:**
-> For a detailed reference of the Python API classes and methods, please see the [API documentation](api.md).
+> For a detailed reference of the Python API classes and methods, please see the [API documentation](https://caldavtasksapi.readthedocs.io/en/stable/api.html).

@@ -188,4 +188,4 @@ The Python API uses several dataclasses to represent CalDAV entities and their p
 
 Detailed documentation for these data structures, including all their fields and methods, can be found in their docstrings.
 
-Refer to the source code or the [examples page](examples.md) for practical usage patterns.
+Refer to the source code or the [examples page](https://caldavtasksapi.readthedocs.io/en/stable/examples.html) for practical usage patterns.
