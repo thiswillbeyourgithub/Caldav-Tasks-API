@@ -10,7 +10,6 @@ A Python library and command-line interface (CLI) for interacting with CalDAV ta
 
 ## Table of Contents
 
-- [License](#license)
 - [Motivation and Purpose](#motivation-and-purpose)
 - [Compatibility](#compatibility)
 - [Features](#features)
@@ -19,16 +18,15 @@ A Python library and command-line interface (CLI) for interacting with CalDAV ta
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Motivation and Purpose
 
 This library was developed as a foundational component for integrating CalDAV task management with more advanced systems. The primary goal is to serve as a backbone for:
 
-1.  Synchronizing tasks from applications like the excellent [Tasks.org Android app](https://f-droid.org/packages/org.tasks/).
-2.  Enabling features such as smart task prioritization using ELO ranking, envisioned to work with a [Litoy-like setup](https://github.com/thiswillbeyourgithub/mini_LiTOY).
+1. Synchronizing tasks from applications like the excellent [Tasks.org Android app](https://f-droid.org/packages/org.tasks/).
+2. Enabling features such as smart task prioritization using ELO ranking, envisioned to work with a [Litoy-like setup](https://github.com/thiswillbeyourgithub/mini_LiTOY).
+3. Making useful python objects with handy methods to manipulate caldav's tasks.
+4. Making a CLI interface to manipulate tasks (secondary goal).
 
 By providing a robust Python interface to CalDAV tasks, this project aims to bridge the gap between standard task management and custom, intelligent task processing workflows. The library is intentionally designed to be minimal, with few external dependencies, to ensure it is lightweight and easy to integrate.
 
@@ -38,7 +36,7 @@ The API has been primarily tested with **Nextcloud Tasks**. However, it is desig
 
 Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Radicale, Synology Calendar) are highly welcome!
 
-## Features
+## Some of the features
 
 *   Connect to CalDAV servers with optional Nextcloud-specific URL adjustments.
 *   Load task lists (calendars supporting VTODOs).
@@ -47,16 +45,14 @@ Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Rad
 *   Create, update, and delete tasks (VTODOs) on the server.
 *   Access parent and child task relationships (`TaskData.parent_task` and `TaskData.child_tasks`).
 *   Read-only mode for applications that need to prevent modifications.
-*   Complete iCalendar (VTODO) roundtrip conversion.
-*   CLI for basic task list inspection with JSON output support.
-*   Debug mode for both CLI (interactive console) and API (PDB post-mortem).
+*   CLI for basic task list inspection with JSON output support (secondary goal of the project).
 
 ## Installation
 
 The CalDAV Tasks API can be installed directly from PyPI:
 
 ```bash
-pip install caldav-tasks-api
+uv pip install caldav-tasks-api
 ```
 
 Alternatively, you can install from source:
@@ -69,13 +65,13 @@ Alternatively, you can install from source:
 2.  Install dependencies (ensure you have `python>=3.8`):
     ```bash
     # Install the package and all dependencies:
-    pip install .
+    uv pip install .
     
     # For development with editable install:
-    pip install -e .
+    uv pip install -e .
     
     # For development with additional dev dependencies:
-    pip install -e ".[dev]"
+    uv pip install -e ".[dev]"
     ```
 
 ## Handling of VTODO Properties (including X-Properties)
