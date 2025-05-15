@@ -37,7 +37,7 @@ from environment variables.
 *   `tasks_api_instance`: Provides an initialized `TasksAPI` instance
 connected to the server with data pre-loaded.
 *   `read_only_tasks_api_instance`: Provides an initialized `TasksAPI`
-instance in read-only mode.
+instance in read-only mode, also with data pre-loaded.
 *   `test_list_name`: Provides the name of a specific CalDAV task list
 designated for tests involving task creation, modification, and deletion.
 
