@@ -7,12 +7,6 @@ seen = []
 
 def skip_imported(app, what, name, obj, skip, options):
     if hasattr(obj, "__module__"):
-        # also make sure to only include each object once
-        objid = id(obj)
-        if objid in seen:
-            return True
-        else:
-            seen.append(objid)
         if not obj.__module__.startswith("caldav_tasks_api"):
             return True
     return skip
