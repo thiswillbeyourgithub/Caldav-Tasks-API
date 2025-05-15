@@ -6,12 +6,13 @@ The is the official documentatino for `Caldav-Tasks-API <https://github.com/this
 .. toctree::
    :maxdepth: 2
 
-   readme
-   usage
-   examples
-   tests
-   api
-   faq
+   README.md
+   usage.rst
+   guide.rst
+   examples.rst
+   tests.rst
+   api.rst
+   faq.rst
 
 .. include:: README.md
    :parser: myst_parser.sphinx_
