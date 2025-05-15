@@ -12,17 +12,11 @@ Subpackages
 Submodules
 ----------
 
-
-.. automodule:: caldav_tasks_api.__main__
-   :members:
-   :private-members:
-   :show-inheritance:
-   :undoc-members:
-
+caldav\_tasks\_api.caldav\_tasks\_api module
+--------------------------------------------
 
 .. automodule:: caldav_tasks_api.caldav_tasks_api
    :members:
-   :private-members:
    :show-inheritance:
    :undoc-members:
 
@@ -31,6 +25,5 @@ Module contents
 
 .. automodule:: caldav_tasks_api
    :members:
-   :private-members:
    :show-inheritance:
    :undoc-members:
