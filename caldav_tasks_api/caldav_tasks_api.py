@@ -28,6 +28,7 @@ class TasksAPI:
         debug: bool = False,
         target_lists: Optional[List[str]] = None,
         read_only: bool = False,  # Added read_only parameter
+        ssl_verify_cert: bool = True,
     ):
         """
         Initializes the TasksAPI and connects to the CalDAV server.
@@ -40,6 +41,7 @@ class TasksAPI:
             debug: If True, enables PDB post-mortem debugging on specific errors.
             target_lists: Optional list of calendar names or UIDs to filter by.
             read_only: If True, API operates in read-only mode, preventing modifications.
+            ssl_verify_cert: If True, verifies SSL certificates. Set to False for self-signed certs.
         """
         self.url = url
         self.username = username
@@ -48,9 +50,10 @@ class TasksAPI:
         self.debug = debug  # Store the debug flag
         self.target_lists = target_lists  # Store the target lists
         self.read_only = read_only  # Store the read_only flag
+        self.ssl_verify_cert = ssl_verify_cert  # Store the SSL verification flag
 
         logger.debug(
-            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}"
+            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}, SSL Verify: {self.ssl_verify_cert}"
         )
 
         self._adjust_url()
@@ -112,7 +115,7 @@ class TasksAPI:
                 url=self.url,
                 username=self.username,
                 password=self.password,
-                ssl_verify_cert=False,  # Set to True in production with valid certs
+                ssl_verify_cert=self.ssl_verify_cert,
             )
             logger.debug("DAVClient instantiated.")
             self.principal = self.client.principal()
