@@ -87,6 +87,9 @@ class TasksAPI:
         )  # Stores TaskListData objects, which will now contain their tasks
 
         self._connect()
+        
+        # Automatically load task data to populate task_lists during initialization
+        self.load_remote_data()
 
     def _adjust_url(self) -> None:
         """Adjusts the URL, e.g., adding https or Nextcloud's CalDAV path."""
