@@ -311,42 +311,52 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
 @click.option("--summary", required=True, help="Summary/text of the task.")
 @click.option("--notes", help="Notes/description for the task.")
 @click.option(
-    "--priority", 
-    type=int, 
-    default=0, 
-    help="Priority of the task (0-9, where 0 means undefined) [default: 0]."
+    "--priority",
+    type=int,
+    default=0,
+    help="Priority of the task (0-9, where 0 means undefined) [default: 0].",
 )
 @click.option(
-    "--due-date", 
-    help="Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z)."
+    "--due-date",
+    help="Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).",
 )
 @click.option(
-    "--start-date", 
-    help="Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z)."
+    "--start-date",
+    help="Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).",
 )
 @click.option(
-    "--tag", 
-    multiple=True, 
-    help="Add a tag/category to the task (can be used multiple times)."
+    "--tag",
+    multiple=True,
+    help="Add a tag/category to the task (can be used multiple times).",
+)
+@click.option("--parent", help="UID of the parent task (for creating subtasks).")
+@click.option(
+    "--x-property",
+    multiple=True,
+    help="Add a custom X-property in format KEY=VALUE (can be used multiple times). Example: --x-property X-CUSTOM-FIELD=myvalue",
 )
 @click.option(
-    "--parent", 
-    help="UID of the parent task (for creating subtasks)."
-)
-@click.option(
-    "--x-property", 
-    multiple=True, 
-    help="Add a custom X-property in format KEY=VALUE (can be used multiple times). Example: --x-property X-CUSTOM-FIELD=myvalue"
-)
-@click.option(
-    "--percent-complete", 
-    type=int, 
-    default=0, 
-    help="Completion percentage (0-100) [default: 0]."
+    "--percent-complete",
+    type=int,
+    default=0,
+    help="Completion percentage (0-100) [default: 0].",
 )
 def add_task(
-    url, username, password, nextcloud_mode, debug, list_uid, summary,
-    notes, priority, due_date, start_date, tag, parent, x_property, percent_complete
+    url,
+    username,
+    password,
+    nextcloud_mode,
+    debug,
+    list_uid,
+    summary,
+    notes,
+    priority,
+    due_date,
+    start_date,
+    tag,
+    parent,
+    x_property,
+    percent_complete,
 ):  # list_uid is specific to this command
     """Add a new task to a specified task list."""
     logger.debug(
@@ -372,19 +382,21 @@ def add_task(
         # Initialize TaskData.list_uid with an empty string if list_uid from CLI/env is None,
         # as TaskData.list_uid expects a string. The api.add_task method will handle final resolution.
         task_data_list_uid = list_uid if list_uid is not None else ""
-        
+
         # Parse X-properties from CLI arguments
         x_props = {}
         for x_prop in x_property:
             if "=" not in x_prop:
-                logger.warning(f"Invalid X-property format '{x_prop}', expected KEY=VALUE. Skipping.")
+                logger.warning(
+                    f"Invalid X-property format '{x_prop}', expected KEY=VALUE. Skipping."
+                )
                 continue
             key, value = x_prop.split("=", 1)
             x_props[key] = value
-        
+
         # Convert tags tuple to list
         tags_list = list(tag) if tag else []
-        
+
         task_data = TaskData(
             text=summary,
             list_uid=task_data_list_uid,

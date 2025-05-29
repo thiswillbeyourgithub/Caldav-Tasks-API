@@ -50,7 +50,7 @@ class TasksAPI:
         self.url = url or os.environ.get("CALDAV_TASKS_API_URL")
         self.username = username or os.environ.get("CALDAV_TASKS_API_USERNAME")
         self.password = password or os.environ.get("CALDAV_TASKS_API_PASSWORD")
-        
+
         # Validate that all required credentials are available
         if not self.url:
             raise ValueError(
@@ -64,7 +64,7 @@ class TasksAPI:
             raise ValueError(
                 "CalDAV password must be provided via 'password' argument or CALDAV_TASKS_API_PASSWORD environment variable."
             )
-            
+
         # Storing password in memory, consider security implications for long-running apps
         self.nextcloud_mode = nextcloud_mode
         self.debug = debug  # Store the debug flag
@@ -87,7 +87,7 @@ class TasksAPI:
         )  # Stores TaskListData objects, which will now contain their tasks
 
         self._connect()
-        
+
         # Automatically load task data to populate task_lists during initialization
         self.load_remote_data()
 
