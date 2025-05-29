@@ -33,7 +33,7 @@ The API has been primarily tested with **Nextcloud Tasks**. However, it is desig
 
 Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Radicale, Synology Calendar) are highly welcome!
 
-## Some of the features
+## Features
 
 *   Connect to CalDAV servers with optional Nextcloud-specific URL adjustments.
 *   Load task lists (calendars supporting VTODOs).
@@ -42,7 +42,9 @@ Testers and feedback for other CalDAV server implementations (e.g., Baïkal, Rad
 *   Create, update, and delete tasks (VTODOs) on the server.
 *   Access parent and child task relationships (`TaskData.parent_task` and `TaskData.child_tasks`).
 *   Read-only mode for applications that need to prevent modifications.
-*   CLI for basic task list inspection with JSON output support (secondary goal of the project).
+*   CLI with multiple commands: show summaries, list tasks, add tasks, and list available task lists.
+*   JSON output support for integration with other tools.
+*   Environment variable support for credentials and default settings.
 
 ## Installation
 
@@ -70,6 +72,88 @@ Alternatively, you can install from source:
     # For development with additional dev dependencies:
     uv pip install -e ".[dev]"
     ```
+
+## Configuration
+
+The library supports configuration via environment variables:
+
+- `CALDAV_TASKS_API_URL`: CalDAV server URL
+- `CALDAV_TASKS_API_USERNAME`: CalDAV username  
+- `CALDAV_TASKS_API_PASSWORD`: CalDAV password
+- `CALDAV_TASKS_API_DEFAULT_LIST_UID`: Default task list UID for operations
+
+## Usage
+
+### Command Line Interface
+
+The package provides several CLI commands:
+
+```bash
+# Show summary of all task lists and tasks
+python -m caldav_tasks_api show-summary
+
+# Show summary with JSON output
+python -m caldav_tasks_api show-summary --json
+
+# List available task lists
+python -m caldav_tasks_api list-lists
+
+# List latest tasks from a specific list
+python -m caldav_tasks_api list-latest-tasks --list-uid <list-uid>
+
+# Add a new task
+python -m caldav_tasks_api add-task --list-uid <list-uid> --summary "My new task"
+
+# Add a task with additional properties
+python -m caldav_tasks_api add-task \
+  --list-uid <list-uid> \
+  --summary "Important task" \
+  --notes "Task description" \
+  --priority 5 \
+  --due-date 20240315 \
+  --tag urgent --tag work
+```
+
+All commands support `--help` for detailed options.
+
+### Python API
+
+```python
+from caldav_tasks_api import TasksAPI
+from caldav_tasks_api.utils.data import TaskData
+
+# Initialize API (credentials from environment or parameters)
+api = TasksAPI(
+    url="https://your-server.com/remote.php/dav/",
+    username="your-username", 
+    password="your-password"
+)
+
+# Load all task lists and tasks
+api.load_remote_data()
+
+# Access task lists
+for task_list in api.task_lists:
+    print(f"List: {task_list.name} ({len(task_list.tasks)} tasks)")
+    
+    for task in task_list.tasks:
+        print(f"  - {task.text}")
+
+# Create a new task
+new_task = TaskData(
+    text="My new task",
+    list_uid="your-list-uid",
+    notes="Task description",
+    priority=5
+)
+created_task = api.add_task(new_task)
+
+# Update a task
+task = api.get_task_by_global_uid("task-uid")
+if task:
+    task.text = "Updated task title"
+    api.update_task(task)
+```
 
 ## Contributing
 
