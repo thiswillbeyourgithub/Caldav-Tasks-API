@@ -40,8 +40,22 @@ def tasks_api_instance(caldav_credentials):
 def test_list_name():
     """Fixture to provide the name of the list designated for testing create/delete operations."""
     name = os.environ.get("CALDAV_TASKS_API_TEST_LIST_NAME")
+    
+    # Strip whitespace if the variable exists
+    if name is not None:
+        name = name.strip()
+    
+    # Check if name is None, empty string, or only whitespace
     if not name:
-        pytest.skip("CALDAV_TASKS_API_TEST_LIST_NAME environment variable not set. Skipping create/delete tests.")
+        # Print debug info to help diagnose the issue
+        raw_value = os.environ.get("CALDAV_TASKS_API_TEST_LIST_NAME")
+        if raw_value is None:
+            skip_msg = "CALDAV_TASKS_API_TEST_LIST_NAME environment variable not set."
+        else:
+            skip_msg = f"CALDAV_TASKS_API_TEST_LIST_NAME environment variable is empty or whitespace-only. Raw value: '{raw_value}'"
+        
+        pytest.skip(f"{skip_msg} Skipping create/delete tests.")
+    
     return name
 
 @pytest.fixture(scope="session")
