@@ -58,11 +58,18 @@ caldav-tasks-api list-lists --url <your_url> --username <user> --password <pass>
 **Key Options:**
 - `--list-uid TEXT`: The UID of the task list where the task will be added. This is mandatory if the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable is not set.
 - `--summary TEXT`: The summary or title text for the new task. This is required.
-Other task properties like notes, due date, etc., can be added via future CLI enhancements.
+- `--notes TEXT`: Notes/description for the task.
+- `--priority INTEGER`: Priority of the task (0-9, where 0 means undefined) [default: 0].
+- `--due-date TEXT`: Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
+- `--start-date TEXT`: Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
+- `--tag TEXT`: Add a tag/category to the task (can be used multiple times).
+- `--parent TEXT`: UID of the parent task (for creating subtasks).
+- `--x-property TEXT`: Add a custom X-property in format KEY=VALUE (can be used multiple times). Example: `--x-property X-CUSTOM-FIELD=myvalue`
+- `--percent-complete INTEGER`: Completion percentage (0-100) [default: 0].
 
 **Example:**
 ```bash
-caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries"
+caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries" --notes "Don't forget milk" --priority 5 --due-date 20240315
 ```
 
 #### `list-latest-tasks`
@@ -86,20 +93,23 @@ The Python API provides more granular control over CalDAV interactions and is pr
 
 This is the main class for initializing a connection to a CalDAV server and managing tasks.
 
-#### `__init__(url: str, username: str, password: str, nextcloud_mode: bool = True, debug: bool = False, target_lists: Optional[List[str]] = None, read_only: bool = False)`
+#### `__init__(url: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None, nextcloud_mode: bool = True, debug: bool = False, target_lists: Optional[List[str]] = None, read_only: bool = False, ssl_verify_cert: bool = True)`
 
-**Description:** Initializes the API client. It attempts to connect to the CalDAV server using the provided credentials and settings.
+**Description:** Initializes the API client. It attempts to connect to the CalDAV server using the provided credentials and settings. If credentials are not provided as arguments, they will be read from environment variables.
 
 **Parameters:**
-- `url` (str): The base URL of the CalDAV server (e.g., "https://example.com/dav").
-- `username` (str): The username for CalDAV authentication.
-- `password` (str): The password for CalDAV authentication.
+- `url` (Optional[str], optional): The base URL of the CalDAV server (e.g., "https://example.com/dav"). If `None`, reads from `CALDAV_TASKS_API_URL` environment variable.
+- `username` (Optional[str], optional): The username for CalDAV authentication. If `None`, reads from `CALDAV_TASKS_API_USERNAME` environment variable.
+- `password` (Optional[str], optional): The password for CalDAV authentication. If `None`, reads from `CALDAV_TASKS_API_PASSWORD` environment variable.
 - `nextcloud_mode` (bool, optional): If `True` (default), adjusts the URL for Nextcloud's specific CalDAV path (e.g., appending "/remote.php/dav/"). Set to `False` for other CalDAV servers if necessary.
 - `debug` (bool, optional): If `True` (default: `False`), enables PDB post-mortem debugging on certain exceptions.
 - `target_lists` (Optional[List[str]], optional): A list of task list names or UIDs. If provided, the API will only interact with these specified lists. If `None` (default), all accessible task lists are considered.
 - `read_only` (bool, optional): If `True` (default: `False`), the API operates in read-only mode, preventing any modifications to the server (e.g., adding, updating, or deleting tasks).
+- `ssl_verify_cert` (bool, optional): If `True` (default), verifies SSL certificates. Set to `False` for self-signed certificates.
 
-**Raises:** `ConnectionError` if the connection to the CalDAV server fails.
+**Raises:** 
+- `ValueError` if required credentials cannot be determined from arguments or environment variables.
+- `ConnectionError` if the connection to the CalDAV server fails.
 
 #### `load_remote_data()`
 

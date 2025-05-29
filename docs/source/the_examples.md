@@ -19,7 +19,7 @@ try:
         # nextcloud_mode=True,  # Default, adjust if not using Nextcloud
         # target_lists=["Personal", "Work"], # Optional: load only specific lists by name or UID
         # debug=True, # Optional: enable PDB for certain exceptions
-        # read_only=True, # Optional: prevent any modifications to the server
+        # read_only=False, # Optional: set to True to prevent any modifications to the server (default: False)
     )
 except ConnectionError as e:
     print(f"Failed to connect: {e}")
