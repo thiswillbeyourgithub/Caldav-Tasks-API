@@ -93,7 +93,8 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
         f"Attempting to create task '{new_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
 
-    created_task_data = api.add_task(task_to_create, target_list.uid, priority=3)
+    task_to_create.priority = 3  # Set priority on TaskData object
+    created_task_data = api.add_task(task_data=task_to_create, list_uid=target_list.uid)
     assert (
         created_task_data is not None
     ), "add_task should return the created task data."
@@ -135,7 +136,7 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
         f"Attempting to delete task UID '{task_uid_to_delete}' from list '{target_list.name}'"
     )
 
-    delete_successful = api.delete_task(task_uid_to_delete, target_list.uid)
+    delete_successful = api.delete_task(task_uid=task_uid_to_delete, list_uid=target_list.uid)
     assert delete_successful, "delete_task should return True on success."
 
     # Verify task is removed
@@ -201,7 +202,7 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
         f"Attempting to create task '{new_task_text}' in list '{target_list_before_add.name}' (UID: {target_list_before_add.uid})"
     )
 
-    created_task_data = api.add_task(task_to_create, target_list_before_add.uid)
+    created_task_data = api.add_task(task_data=task_to_create, list_uid=target_list_before_add.uid)
     assert (
         created_task_data is not None
     ), "add_task should return the created task data."
@@ -270,7 +271,7 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
     print(
         f"Attempting to create task '{initial_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
-    created_task_data = api.add_task(task_to_create, target_list.uid)
+    created_task_data = api.add_task(task_data=task_to_create, list_uid=target_list.uid)
     assert (
         created_task_data is not None
     ), "add_task should return the created task data."
@@ -294,7 +295,7 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
     print(
         f"Attempting to rename task UID '{task_to_update.uid}' to '{renamed_task_text}'"
     )
-    updated_task_data = api.update_task(task_to_update)
+    updated_task_data = api.update_task(task_data=task_to_update)
     assert (
         updated_task_data is not None
     ), "update_task should return the updated task data."
@@ -464,7 +465,7 @@ def test_add_task_in_read_only_mode(
     )
 
     with pytest.raises(PermissionError) as excinfo:
-        api.add_task(task_to_create, target_list_uid)  # type: ignore
+        api.add_task(task_data=task_to_create, list_uid=target_list_uid)  # type: ignore
     assert "API is in read-only mode" in str(excinfo.value)
     print(
         f"Successfully asserted PermissionError when adding task in read-only mode: {excinfo.value}"
@@ -493,7 +494,7 @@ def test_delete_task_in_read_only_mode(
     dummy_task_uid = f"dummy-task-uid-for-delete-{uuid.uuid4()}"
 
     with pytest.raises(PermissionError) as excinfo:
-        api.delete_task(dummy_task_uid, target_list_uid)  # type: ignore
+        api.delete_task(task_uid=dummy_task_uid, list_uid=target_list_uid)  # type: ignore
     assert "API is in read-only mode" in str(excinfo.value)
     print(
         f"Successfully asserted PermissionError when deleting task in read-only mode: {excinfo.value}"
@@ -541,7 +542,7 @@ def test_update_task_in_read_only_mode(
     )
 
     with pytest.raises(PermissionError) as excinfo:
-        api.update_task(task_to_update)
+        api.update_task(task_data=task_to_update)
     assert "API is in read-only mode" in str(excinfo.value)
     print(
         f"Successfully asserted PermissionError when updating task in read-only mode: {excinfo.value}"
@@ -576,7 +577,7 @@ def test_create_update_xprop_delete_task(
     task_to_create = TaskData(text=new_task_text, list_uid=target_list.uid)
 
     print(f"Creating task '{new_task_text}' in list '{target_list.name}'")
-    created_task = api.add_task(task_to_create, target_list.uid)
+    created_task = api.add_task(task_data=task_to_create, list_uid=target_list.uid)
     assert created_task.uid, "Created task should have a UID"
     assert created_task.synced, "Created task should be marked as synced"
 
@@ -586,7 +587,7 @@ def test_create_update_xprop_delete_task(
 
     print(f"Adding X property {x_prop_name}={x_prop_value} to task")
     created_task.x_properties[x_prop_name] = x_prop_value
-    updated_task = api.update_task(created_task)
+    updated_task = api.update_task(task_data=created_task)
 
     assert updated_task.synced, "Updated task should be marked as synced"
 
@@ -636,7 +637,7 @@ def test_create_update_xprop_delete_task(
 
     # --- Delete Task ---
     print(f"Deleting task UID {created_task.uid}")
-    delete_successful = api.delete_task(created_task.uid, target_list.uid)
+    delete_successful = api.delete_task(task_uid=created_task.uid, list_uid=target_list.uid)
     assert delete_successful, "Task deletion should be successful"
 
     # Verify deletion
@@ -675,7 +676,7 @@ def test_task_ical_roundtrip():
     print(f"Generated iCal string (first 200 chars):\n{ical_string[:200]}...")
 
     # Convert back to TaskData
-    roundtrip_task = TaskData.from_ical(ical_string, list_uid=original_task.list_uid)
+    roundtrip_task = TaskData.from_ical(ical=ical_string, list_uid=original_task.list_uid)
 
     # Verify that key properties were preserved
     assert roundtrip_task.uid == original_task.uid, "UID should be preserved"
@@ -764,7 +765,7 @@ def test_task_parent_child_relationships(
     print(
         f"Attempting to create parent task '{parent_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
-    created_parent_task = api.add_task(parent_to_create, target_list.uid)
+    created_parent_task = api.add_task(task_data=parent_to_create, list_uid=target_list.uid)
     assert (
         created_parent_task is not None
     ), "add_task (parent) should return the created task data."
@@ -788,7 +789,7 @@ def test_task_parent_child_relationships(
     print(
         f"Attempting to create child task '{child_task_text}' linked to parent UID '{created_parent_task.uid}'"
     )
-    created_child_task = api.add_task(child_to_create, target_list.uid)
+    created_child_task = api.add_task(task_data=child_to_create, list_uid=target_list.uid)
     assert (
         created_child_task is not None
     ), "add_task (child) should return the created task data."
@@ -853,12 +854,12 @@ def test_task_parent_child_relationships(
 
     # --- Clean up ---
     print(f"Attempting to delete child task UID '{created_child_task.uid}'")
-    delete_child_successful = api.delete_task(created_child_task.uid, target_list.uid)
+    delete_child_successful = api.delete_task(task_uid=created_child_task.uid, list_uid=target_list.uid)
     assert delete_child_successful, "Child task deletion should return True."
     print(f"Successfully deleted child task UID '{created_child_task.uid}'.")
 
     print(f"Attempting to delete parent task UID '{created_parent_task.uid}'")
-    delete_parent_successful = api.delete_task(created_parent_task.uid, target_list.uid)
+    delete_parent_successful = api.delete_task(task_uid=created_parent_task.uid, list_uid=target_list.uid)
     assert delete_parent_successful, "Parent task deletion should return True."
     print(f"Successfully deleted parent task UID '{created_parent_task.uid}'.")
 
