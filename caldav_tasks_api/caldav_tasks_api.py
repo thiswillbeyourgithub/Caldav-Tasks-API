@@ -21,9 +21,9 @@ class TasksAPI:
 
     def __init__(
         self,
-        url: str,
-        username: str,
-        password: str,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         nextcloud_mode: bool = True,
         debug: bool = False,
         target_lists: Optional[List[str]] = None,
@@ -34,18 +34,38 @@ class TasksAPI:
         Initializes the TasksAPI and connects to the CalDAV server.
 
         Args:
-            url: The base URL of the CalDAV server.
-            username: The username for authentication.
-            password: The password for authentication.
+            url: The base URL of the CalDAV server. If None, reads from CALDAV_TASKS_API_URL environment variable.
+            username: The username for authentication. If None, reads from CALDAV_TASKS_API_USERNAME environment variable.
+            password: The password for authentication. If None, reads from CALDAV_TASKS_API_PASSWORD environment variable.
             nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
             debug: If True, enables PDB post-mortem debugging on specific errors.
             target_lists: Optional list of calendar names or UIDs to filter by.
             read_only: If True, API operates in read-only mode, preventing modifications.
             ssl_verify_cert: If True, verifies SSL certificates. Set to False for self-signed certs.
+
+        Raises:
+            ValueError: If required credentials cannot be determined from arguments or environment variables.
         """
-        self.url = url
-        self.username = username
-        self.password = password  # Storing password in memory, consider security implications for long-running apps
+        # Read from environment variables if not provided as arguments
+        self.url = url or os.environ.get("CALDAV_TASKS_API_URL")
+        self.username = username or os.environ.get("CALDAV_TASKS_API_USERNAME")
+        self.password = password or os.environ.get("CALDAV_TASKS_API_PASSWORD")
+        
+        # Validate that all required credentials are available
+        if not self.url:
+            raise ValueError(
+                "CalDAV server URL must be provided via 'url' argument or CALDAV_TASKS_API_URL environment variable."
+            )
+        if not self.username:
+            raise ValueError(
+                "CalDAV username must be provided via 'username' argument or CALDAV_TASKS_API_USERNAME environment variable."
+            )
+        if not self.password:
+            raise ValueError(
+                "CalDAV password must be provided via 'password' argument or CALDAV_TASKS_API_PASSWORD environment variable."
+            )
+            
+        # Storing password in memory, consider security implications for long-running apps
         self.nextcloud_mode = nextcloud_mode
         self.debug = debug  # Store the debug flag
         self.target_lists = target_lists  # Store the target lists

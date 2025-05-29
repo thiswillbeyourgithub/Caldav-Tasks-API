@@ -32,42 +32,22 @@ def get_api(
 ) -> TasksAPI:
     """
     Initializes and returns the TasksAPI instance.
-    Validates credentials and raises appropriate errors.
+    The TasksAPI class will handle environment variable fallbacks and validation.
     """
-    # Get credentials from args or environment
-    url = url or os.environ.get("CALDAV_TASKS_API_URL")
-    username = username or os.environ.get("CALDAV_TASKS_API_USERNAME")
-    password = password or os.environ.get("CALDAV_TASKS_API_PASSWORD")
-
-    # Validate credentials
-    if not url:
-        logger.error("CalDAV server URL not provided.")
-        raise click.UsageError(
-            "CalDAV server URL must be provided via --url option or CALDAV_URL environment variable."
+    try:
+        return TasksAPI(
+            url=url,
+            username=username,
+            password=password,
+            nextcloud_mode=nextcloud_mode,
+            debug=debug,
+            target_lists=target_lists,
+            read_only=read_only,
         )
-    if not username:
-        logger.error("CalDAV username not provided.")
-        raise click.UsageError(
-            "CalDAV username must be provided via --username option or CALDAV_USERNAME environment variable."
-        )
-    if not password:
-        logger.error("CalDAV password not provided.")
-        raise click.UsageError(
-            "CalDAV password must be provided via --password option or CALDAV_PASSWORD environment variable."
-        )
-
-    logger.debug("Credentials validated successfully.")
-    logger.info(f"Initializing TasksAPI for CalDAV server at: {url}")
-
-    return TasksAPI(
-        url=url,
-        username=username,
-        password=password,
-        nextcloud_mode=nextcloud_mode,
-        debug=debug,
-        target_lists=target_lists,
-        read_only=read_only,
-    )
+    except ValueError as ve:
+        # Convert ValueError from TasksAPI to click.UsageError for CLI
+        logger.error(f"Configuration error: {ve}")
+        raise click.UsageError(str(ve))
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
