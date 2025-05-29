@@ -3,7 +3,7 @@ FAQ
 
 ## When does the library upload data to the CalDAV server? What triggers these uploads?
 
-ata uploads (i.e., changes to your tasks on the server) occur only when specific methods of the `TasksAPI` class are called. These methods interact directly with the CalDAV server to perform the requested operations. There is no automatic background synchronization or queuing of changes.
+Data uploads (i.e., changes to your tasks on the server) occur only when specific methods of the `TasksAPI` class are called. These methods interact directly with the CalDAV server to perform the requested operations. There is no automatic background synchronization or queuing of changes.
 
 The primary methods that trigger uploads are:
 
