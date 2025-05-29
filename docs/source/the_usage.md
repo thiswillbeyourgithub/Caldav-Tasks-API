@@ -52,6 +52,17 @@ caldav-tasks-api show_summary --json > tasks_data.json
 # Ensure CALDAV_TASKS_API_DEFAULT_LIST_UID is set or provide --list-uid
 caldav-tasks-api add-task --summary "My new task from CLI"
 
+# Add a more detailed task with various properties
+caldav-tasks-api add-task \
+    --summary "Complete project proposal" \
+    --notes "Include budget analysis and timeline" \
+    --priority 5 \
+    --due-date "20240315T170000Z" \
+    --tag "work" \
+    --tag "urgent" \
+    --percent-complete 25 \
+    --x-property "X-PROJECT-ID=PROJ-2024-001"
+
 # List the latest 5 tasks from a specific list (output is JSON)
 caldav-tasks-api list-latest-tasks --list-uid "your-list-uid-here" --limit 5 > latest_tasks.json
 
@@ -76,6 +87,14 @@ caldav-tasks-api list-lists > all_lists.json
 - `add-task`:
   - `--list-uid TEXT`: UID of the task list (or `CALDAV_TASKS_API_DEFAULT_LIST_UID` env var). Mandatory if env var not set.
   - `--summary TEXT`: Summary/text of the task (required).
+  - `--notes TEXT`: Notes/description for the task.
+  - `--priority INTEGER`: Priority of the task (0-9, where 0 means undefined) [default: 0].
+  - `--due-date TEXT`: Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
+  - `--start-date TEXT`: Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
+  - `--tag TEXT`: Add a tag/category to the task (can be used multiple times).
+  - `--parent TEXT`: UID of the parent task (for creating subtasks).
+  - `--x-property TEXT`: Add a custom X-property in format KEY=VALUE (can be used multiple times). Example: --x-property X-CUSTOM-FIELD=myvalue
+  - `--percent-complete INTEGER`: Completion percentage (0-100) [default: 0].
 - `list-latest-tasks`:
   - `--list-uid TEXT`: UID of the task list to filter from (or `CALDAV_TASKS_API_DEFAULT_LIST_UID` env var).
   - `--limit INTEGER`: Maximum number of tasks to return (default: 10). Output is always JSON.
