@@ -329,9 +329,44 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
     help="UID of the task list to add the task to. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set. Mandatory if env var not set.",
 )
 @click.option("--summary", required=True, help="Summary/text of the task.")
-# Add more options for other TaskData fields as needed (e.g., --notes, --due-date)
+@click.option("--notes", help="Notes/description for the task.")
+@click.option(
+    "--priority", 
+    type=int, 
+    default=0, 
+    help="Priority of the task (0-9, where 0 means undefined) [default: 0]."
+)
+@click.option(
+    "--due-date", 
+    help="Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z)."
+)
+@click.option(
+    "--start-date", 
+    help="Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z)."
+)
+@click.option(
+    "--tag", 
+    multiple=True, 
+    help="Add a tag/category to the task (can be used multiple times)."
+)
+@click.option(
+    "--parent", 
+    help="UID of the parent task (for creating subtasks)."
+)
+@click.option(
+    "--x-property", 
+    multiple=True, 
+    help="Add a custom X-property in format KEY=VALUE (can be used multiple times). Example: --x-property X-CUSTOM-FIELD=myvalue"
+)
+@click.option(
+    "--percent-complete", 
+    type=int, 
+    default=0, 
+    help="Completion percentage (0-100) [default: 0]."
+)
 def add_task(
-    url, username, password, nextcloud_mode, debug, list_uid, summary
+    url, username, password, nextcloud_mode, debug, list_uid, summary,
+    notes, priority, due_date, start_date, tag, parent, x_property, percent_complete
 ):  # list_uid is specific to this command
     """Add a new task to a specified task list."""
     logger.debug(
@@ -357,12 +392,30 @@ def add_task(
         # Initialize TaskData.list_uid with an empty string if list_uid from CLI/env is None,
         # as TaskData.list_uid expects a string. The api.add_task method will handle final resolution.
         task_data_list_uid = list_uid if list_uid is not None else ""
+        
+        # Parse X-properties from CLI arguments
+        x_props = {}
+        for x_prop in x_property:
+            if "=" not in x_prop:
+                logger.warning(f"Invalid X-property format '{x_prop}', expected KEY=VALUE. Skipping.")
+                continue
+            key, value = x_prop.split("=", 1)
+            x_props[key] = value
+        
+        # Convert tags tuple to list
+        tags_list = list(tag) if tag else []
+        
         task_data = TaskData(
             text=summary,
             list_uid=task_data_list_uid,
-            # Initialize other fields of TaskData as needed, e.g. notes, due_date
-            # For example:
-            # notes="Generated via CLI",
+            notes=notes or "",
+            priority=priority,
+            due_date=due_date or "",
+            start_date=start_date or "",
+            tags=tags_list,
+            parent=parent or "",
+            percent_complete=percent_complete,
+            x_properties=x_props,
         )
 
         # Pass the original list_uid from CLI/env (which could be None) to api.add_task.
@@ -375,6 +428,24 @@ def add_task(
         click.echo(f"Task '{created_task.text}' added successfully!")
         click.echo(f"  UID: {created_task.uid}")
         click.echo(f"  List UID: {created_task.list_uid}")
+        if created_task.notes:
+            click.echo(f"  Notes: {created_task.notes}")
+        if created_task.priority > 0:
+            click.echo(f"  Priority: {created_task.priority}")
+        if created_task.due_date:
+            click.echo(f"  Due Date: {created_task.due_date}")
+        if created_task.start_date:
+            click.echo(f"  Start Date: {created_task.start_date}")
+        if created_task.tags:
+            click.echo(f"  Tags: {', '.join(created_task.tags)}")
+        if created_task.parent:
+            click.echo(f"  Parent Task: {created_task.parent}")
+        if created_task.percent_complete > 0:
+            click.echo(f"  Completion: {created_task.percent_complete}%")
+        if created_task.x_properties:
+            click.echo("  X-Properties:")
+            for key, value in created_task.x_properties.items():
+                click.echo(f"    {key}: {value}")
         if created_task.synced:
             click.echo("  Status: Synced with server.")
         else:
