@@ -410,6 +410,10 @@ class TasksAPI:
         2. The `task_data.list_uid` attribute if `list_uid` argument is not provided.
         3. The `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable if neither of the above is set.
 
+        If no priority is set on the task (priority <= 0), a default priority will be applied from the
+        `CALDAV_TASKS_API_DEFAULT_PRIORITY` environment variable. If this environment variable is not set,
+        the default priority value of 3 will be used.
+
         Args:
             task_data: The TaskData object representing the task to add.
             list_uid: Optional. The UID of the task list to add the task to.
@@ -447,6 +451,17 @@ class TasksAPI:
             err_msg = "Task list UID must be specified via 'list_uid' argument, TaskData.list_uid, or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable."
             logger.error(err_msg)
             raise ValueError(err_msg)
+
+        # Set default priority if none is set (priority <= 0 means no priority)
+        if task_data.priority <= 0:
+            default_priority_str = os.environ.get("CALDAV_TASKS_API_DEFAULT_PRIORITY", "0")
+            try:
+                default_priority = int(default_priority_str)
+                task_data.priority = default_priority
+                logger.debug(f"Applied default priority {default_priority} to task from environment variable or default value.")
+            except ValueError:
+                logger.warning(f"Invalid CALDAV_TASKS_API_DEFAULT_PRIORITY value '{default_priority_str}'. Using default value 0.")
+                task_data.priority = 0
 
         # Ensure task_data.list_uid is consistent with the resolved UID for to_ical() and local storage.
         if task_data.list_uid != effective_list_uid:
