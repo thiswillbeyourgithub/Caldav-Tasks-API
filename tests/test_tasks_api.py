@@ -136,7 +136,7 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
         f"Attempting to delete task UID '{task_uid_to_delete}' from list '{target_list.name}'"
     )
 
-    delete_successful = api.delete_task(
+    delete_successful = api.delete_task_by_id(
         task_uid=task_uid_to_delete, list_uid=target_list.uid
     )
     assert delete_successful, "delete_task should return True on success."
@@ -498,7 +498,7 @@ def test_delete_task_in_read_only_mode(
     dummy_task_uid = f"dummy-task-uid-for-delete-{uuid.uuid4()}"
 
     with pytest.raises(PermissionError) as excinfo:
-        api.delete_task(task_uid=dummy_task_uid, list_uid=target_list_uid)  # type: ignore
+        api.delete_task_by_id(task_uid=dummy_task_uid, list_uid=target_list_uid)  # type: ignore
     assert "API is in read-only mode" in str(excinfo.value)
     print(
         f"Successfully asserted PermissionError when deleting task in read-only mode: {excinfo.value}"
@@ -641,7 +641,7 @@ def test_create_update_xprop_delete_task(
 
     # --- Delete Task ---
     print(f"Deleting task UID {created_task.uid}")
-    delete_successful = api.delete_task(
+    delete_successful = api.delete_task_by_id(
         task_uid=created_task.uid, list_uid=target_list.uid
     )
     assert delete_successful, "Task deletion should be successful"
@@ -866,14 +866,14 @@ def test_task_parent_child_relationships(
 
     # --- Clean up ---
     print(f"Attempting to delete child task UID '{created_child_task.uid}'")
-    delete_child_successful = api.delete_task(
+    delete_child_successful = api.delete_task_by_id(
         task_uid=created_child_task.uid, list_uid=target_list.uid
     )
     assert delete_child_successful, "Child task deletion should return True."
     print(f"Successfully deleted child task UID '{created_child_task.uid}'.")
 
     print(f"Attempting to delete parent task UID '{created_parent_task.uid}'")
-    delete_parent_successful = api.delete_task(
+    delete_parent_successful = api.delete_task_by_id(
         task_uid=created_parent_task.uid, list_uid=target_list.uid
     )
     assert delete_parent_successful, "Parent task deletion should return True."
