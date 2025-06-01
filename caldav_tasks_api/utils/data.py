@@ -306,7 +306,7 @@ class TaskData:
         if not self.list_uid:
             raise ValueError("Cannot delete task: Task list UID is missing.")
         
-        return self._api_reference.delete_task(self.uid, self.list_uid)
+        return self._api_reference.delete_task_by_id(self.uid, self.list_uid)
 
     def to_ical(self) -> str:
         """Build VTODO iCal component string from TaskData properties."""

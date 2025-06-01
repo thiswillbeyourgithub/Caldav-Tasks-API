@@ -628,15 +628,34 @@ class TasksAPI:
                 pdb.post_mortem()
             raise
 
-    def delete_task(self, task_uid: str, list_uid: str) -> bool:
+    def delete_task_by_id(self, task_uid: str, list_uid: Optional[str] = None) -> bool:
         """
         Deletes a task from the specified task list on the server.
+        
+        Args:
+            task_uid: The UID of the task to delete.
+            list_uid: The UID of the task list. If None, uses CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable.
+            
+        Returns:
+            True if deletion was successful.
+            
+        Raises:
+            PermissionError: If the API is in read-only mode.
+            ValueError: If list_uid cannot be determined or the specified list is not found.
         """
         if self.read_only:
             logger.error("Attempt to delete task in read-only mode.")
             raise PermissionError(
                 "API is in read-only mode. Deleting tasks is not allowed."
             )
+
+        # Determine the effective list UID
+        if list_uid is None:
+            list_uid = os.environ.get("CALDAV_TASKS_API_DEFAULT_LIST_UID")
+            if not list_uid:
+                raise ValueError(
+                    "list_uid must be provided or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable must be set."
+                )
 
         logger.info(
             f"Attempting to delete task UID '{task_uid}' from list UID '{list_uid}'."
