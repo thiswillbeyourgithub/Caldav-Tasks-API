@@ -452,6 +452,30 @@ class TasksAPI:
             logger.error(err_msg)
             raise ValueError(err_msg)
 
+        # Validate and clamp priority to valid range (0-9)
+        original_priority = task_data.priority
+        try:
+            # Ensure priority is an integer
+            if not isinstance(task_data.priority, int):
+                try:
+                    task_data.priority = int(task_data.priority)
+                    logger.warning(f"Task priority was not an integer (was: {original_priority}). Converted to: {task_data.priority}")
+                except (ValueError, TypeError):
+                    logger.warning(f"Task priority could not be converted to integer (was: {original_priority}). Setting to 0.")
+                    task_data.priority = 0
+            
+            # Clamp priority to valid range (0-9)
+            if task_data.priority < 0:
+                logger.warning(f"Task priority was below 0 (was: {original_priority}). Setting to 0.")
+                task_data.priority = 0
+            elif task_data.priority > 9:
+                logger.warning(f"Task priority was above 9 (was: {original_priority}). Setting to 9.")
+                task_data.priority = 9
+                
+        except Exception as e:
+            logger.warning(f"Unexpected error validating task priority (was: {original_priority}): {e}. Setting to 0.")
+            task_data.priority = 0
+
         # Set default priority if none is set (priority <= 0 means no priority)
         if task_data.priority <= 0:
             default_priority_str = os.environ.get("CALDAV_TASKS_API_DEFAULT_PRIORITY", "0")
