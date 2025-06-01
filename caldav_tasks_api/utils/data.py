@@ -3,8 +3,11 @@ from __future__ import annotations
 import datetime
 import random
 from dataclasses import dataclass, field, fields  # Added fields
-from typing import Optional, Dict
+from typing import Optional, Dict, TYPE_CHECKING
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from caldav_tasks_api.caldav_tasks_api import TasksAPI
 
 
 @dataclass
