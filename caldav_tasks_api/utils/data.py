@@ -279,6 +279,32 @@ class TaskData:
                         children.append(task_item)
         return children
 
+    def delete(self) -> bool:
+        """
+        Deletes this task from the server using the API reference.
+        
+        Returns:
+            True if deletion was successful, False otherwise.
+            
+        Raises:
+            RuntimeError: If no API reference is available.
+            PermissionError: If the API is in read-only mode.
+            ValueError: If the task list or task is not found.
+        """
+        if not self._api_reference:
+            raise RuntimeError(
+                "Cannot delete task: No API reference available. "
+                "This task may not have been loaded through a TasksAPI instance."
+            )
+        
+        if not self.uid:
+            raise ValueError("Cannot delete task: Task UID is missing.")
+        
+        if not self.list_uid:
+            raise ValueError("Cannot delete task: Task list UID is missing.")
+        
+        return self._api_reference.delete_task(self.uid, self.list_uid)
+
     def to_ical(self) -> str:
         """Build VTODO iCal component string from TaskData properties."""
         ical: str = ""
