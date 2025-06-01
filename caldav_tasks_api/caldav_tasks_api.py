@@ -17,7 +17,7 @@ from caldav_tasks_api.utils.data import (
 
 class TasksAPI:
 
-    VERSION: str = "1.2.0"
+    VERSION: str = "1.2.2"
 
     def __init__(
         self,
@@ -49,7 +49,9 @@ class TasksAPI:
         # Read from environment variables if not provided as arguments
         self.url = url or os.environ.get("CALDAV_TASKS_API_URL")
         self.username = username or os.environ.get("CALDAV_TASKS_API_USERNAME")
-        self.password = password or os.environ.get("CALDAV_TASKS_API_PASSWORD")
+        password_for_connection = password or os.environ.get(
+            "CALDAV_TASKS_API_PASSWORD"
+        )
 
         # Validate that all required credentials are available
         if not self.url:
@@ -60,12 +62,10 @@ class TasksAPI:
             raise ValueError(
                 "CalDAV username must be provided via 'username' argument or CALDAV_TASKS_API_USERNAME environment variable."
             )
-        if not self.password:
+        if not password_for_connection:
             raise ValueError(
                 "CalDAV password must be provided via 'password' argument or CALDAV_TASKS_API_PASSWORD environment variable."
             )
-
-        # Storing password in memory, consider security implications for long-running apps
         self.nextcloud_mode = nextcloud_mode
         self.debug = debug  # Store the debug flag
         self.target_lists = target_lists  # Store the target lists
@@ -86,7 +86,7 @@ class TasksAPI:
             []
         )  # Stores TaskListData objects, which will now contain their tasks
 
-        self._connect()
+        self._connect(password_for_connection)
 
         # Automatically load task data to populate task_lists during initialization
         self.load_remote_data()
@@ -122,7 +122,7 @@ class TasksAPI:
         else:
             logger.debug(f"URL '{self.url}' did not require adjustment.")
 
-    def _connect(self) -> None:
+    def _connect(self, password: str) -> None:
         """Establishes connection to the CalDAV server."""
         logger.info(f"Attempting to connect to CalDAV server at: {self.url}")
         urllib3.disable_warnings(
@@ -137,7 +137,7 @@ class TasksAPI:
             self.client = DAVClient(
                 url=self.url,
                 username=self.username,
-                password=self.password,
+                password=password,
                 ssl_verify_cert=self.ssl_verify_cert,
             )
             logger.debug("DAVClient instantiated.")
@@ -410,6 +410,10 @@ class TasksAPI:
         2. The `task_data.list_uid` attribute if `list_uid` argument is not provided.
         3. The `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable if neither of the above is set.
 
+        If no priority is set on the task (priority <= 0), a default priority will be applied from the
+        `CALDAV_TASKS_API_DEFAULT_PRIORITY` environment variable. If this environment variable is not set,
+        the default priority value of 3 will be used.
+
         Args:
             task_data: The TaskData object representing the task to add.
             list_uid: Optional. The UID of the task list to add the task to.
@@ -447,6 +451,57 @@ class TasksAPI:
             err_msg = "Task list UID must be specified via 'list_uid' argument, TaskData.list_uid, or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable."
             logger.error(err_msg)
             raise ValueError(err_msg)
+
+        # Validate and clamp priority to valid range (0-9)
+        original_priority = task_data.priority
+        try:
+            # Ensure priority is an integer
+            if not isinstance(task_data.priority, int):
+                try:
+                    task_data.priority = int(task_data.priority)
+                    logger.warning(
+                        f"Task priority was not an integer (was: {original_priority}). Converted to: {task_data.priority}"
+                    )
+                except (ValueError, TypeError):
+                    logger.warning(
+                        f"Task priority could not be converted to integer (was: {original_priority}). Setting to 0."
+                    )
+                    task_data.priority = 0
+
+            # Clamp priority to valid range (0-9)
+            if task_data.priority < 0:
+                logger.warning(
+                    f"Task priority was below 0 (was: {original_priority}). Setting to 0."
+                )
+                task_data.priority = 0
+            elif task_data.priority > 9:
+                logger.warning(
+                    f"Task priority was above 9 (was: {original_priority}). Setting to 9."
+                )
+                task_data.priority = 9
+
+        except Exception as e:
+            logger.warning(
+                f"Unexpected error validating task priority (was: {original_priority}): {e}. Setting to 0."
+            )
+            task_data.priority = 0
+
+        # Set default priority if none is set (priority <= 0 means no priority)
+        if task_data.priority <= 0:
+            default_priority_str = os.environ.get(
+                "CALDAV_TASKS_API_DEFAULT_PRIORITY", "0"
+            )
+            try:
+                default_priority = int(default_priority_str)
+                task_data.priority = default_priority
+                logger.debug(
+                    f"Applied default priority {default_priority} to task from environment variable or default value."
+                )
+            except ValueError:
+                logger.warning(
+                    f"Invalid CALDAV_TASKS_API_DEFAULT_PRIORITY value '{default_priority_str}'. Using default value 0."
+                )
+                task_data.priority = 0
 
         # Ensure task_data.list_uid is consistent with the resolved UID for to_ical() and local storage.
         if task_data.list_uid != effective_list_uid:
@@ -589,15 +644,34 @@ class TasksAPI:
                 pdb.post_mortem()
             raise
 
-    def delete_task(self, task_uid: str, list_uid: str) -> bool:
+    def delete_task_by_id(self, task_uid: str, list_uid: Optional[str] = None) -> bool:
         """
         Deletes a task from the specified task list on the server.
+
+        Args:
+            task_uid: The UID of the task to delete.
+            list_uid: The UID of the task list. If None, uses CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable.
+
+        Returns:
+            True if deletion was successful.
+
+        Raises:
+            PermissionError: If the API is in read-only mode.
+            ValueError: If list_uid cannot be determined or the specified list is not found.
         """
         if self.read_only:
             logger.error("Attempt to delete task in read-only mode.")
             raise PermissionError(
                 "API is in read-only mode. Deleting tasks is not allowed."
             )
+
+        # Determine the effective list UID
+        if list_uid is None:
+            list_uid = os.environ.get("CALDAV_TASKS_API_DEFAULT_LIST_UID")
+            if not list_uid:
+                raise ValueError(
+                    "list_uid must be provided or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable must be set."
+                )
 
         logger.info(
             f"Attempting to delete task UID '{task_uid}' from list UID '{list_uid}'."
