@@ -306,6 +306,10 @@ class TaskData:
         if not self.list_uid:
             raise ValueError("Cannot delete task: Task list UID is missing.")
         
+        # Debug print for task recovery purposes before deletion
+        from loguru import logger
+        logger.info(f"DEBUG: TaskData.delete() called - Text: '{self.text}', Notes: '{self.notes}', Priority: {self.priority}, Due: '{self.due_date}', UID: '{self.uid}'")
+        
         return self._api_reference.delete_task_by_id(self.uid, self.list_uid)
 
     def to_ical(self) -> str:
