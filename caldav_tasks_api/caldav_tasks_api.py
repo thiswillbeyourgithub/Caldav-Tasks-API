@@ -514,7 +514,9 @@ class TasksAPI:
             f"Attempting to add task (UID: {task_data.uid if task_data.uid else 'new'}) to list UID: {effective_list_uid}"
         )
         # Debug print for task recovery purposes
-        logger.info(f"DEBUG: Adding task with content - Text: '{task_data.text}', Notes: '{task_data.notes}', Priority: {task_data.priority}, Due: '{task_data.due_date}'")
+        logger.info(
+            f"DEBUG: Adding task with content - Text: '{task_data.text}', Notes: '{task_data.notes}', Priority: {task_data.priority}, Due: '{task_data.due_date}'"
+        )
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before adding task.")
             self._fetch_raw_calendars()
@@ -678,16 +680,22 @@ class TasksAPI:
         logger.info(
             f"Attempting to delete task UID '{task_uid}' from list UID '{list_uid}'."
         )
-        
+
         # Try to get task content for debug recovery purposes before deletion
         try:
             existing_task = self.get_task_by_global_uid(task_uid)
             if existing_task:
-                logger.info(f"DEBUG: Deleting task with content - Text: '{existing_task.text}', Notes: '{existing_task.notes}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'")
+                logger.info(
+                    f"DEBUG: Deleting task with content - Text: '{existing_task.text}', Notes: '{existing_task.notes}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'"
+                )
             else:
-                logger.info(f"DEBUG: Deleting task UID '{task_uid}' - could not retrieve task content for debug")
+                logger.info(
+                    f"DEBUG: Deleting task UID '{task_uid}' - could not retrieve task content for debug"
+                )
         except Exception as e:
-            logger.info(f"DEBUG: Deleting task UID '{task_uid}' - error retrieving content for debug: {e}")
+            logger.info(
+                f"DEBUG: Deleting task UID '{task_uid}' - error retrieving content for debug: {e}"
+            )
         if not self.raw_calendars:
             logger.debug(
                 "Raw calendars not loaded, fetching them before deleting task."
