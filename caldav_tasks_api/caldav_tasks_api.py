@@ -17,7 +17,7 @@ from caldav_tasks_api.utils.data import (
 
 class TasksAPI:
 
-    VERSION: str = "1.2.2"
+    VERSION: str = "1.2.3"
 
     def __init__(
         self,
