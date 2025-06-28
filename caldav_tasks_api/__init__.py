@@ -10,7 +10,6 @@ from caldav_tasks_api.utils import logging_config  # This will run setup_logging
 
 from caldav_tasks_api.caldav_tasks_api import TasksAPI
 from caldav_tasks_api.utils.data import TaskData, TaskListData
-import caldav_tasks_api.__main__ as cli
 
 VERSION = TasksAPI.VERSION
 
@@ -20,5 +19,4 @@ __all__ = [
     "TaskListData",
     "logging_config",  # Optionally expose logger or config
     "VERSION",
-    "cli",
 ]
