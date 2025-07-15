@@ -108,7 +108,9 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
         return task_date
 
     tasks_to_delete.sort(key=get_task_sort_key)
-    logger.debug(f"Sorted {len(tasks_to_delete)} tasks by modification date (oldest first)")
+    logger.debug(
+        f"Sorted {len(tasks_to_delete)} tasks by modification date (oldest first)"
+    )
 
     return tasks_to_delete
 
