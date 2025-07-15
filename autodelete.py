@@ -103,8 +103,18 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
 
 
 @click.command()
-@click.argument("list_uid", type=str)
-@click.argument("days_threshold", type=int)
+@click.option(
+    "--list-uid", 
+    type=str, 
+    required=True, 
+    help="The UID of the task list to process"
+)
+@click.option(
+    "--days-threshold", 
+    type=int, 
+    required=True, 
+    help="Number of days - completed tasks older than this will be deleted"
+)
 @click.option("--url", help="CalDAV server URL (or set CALDAV_TASKS_API_URL env var)")
 @click.option(
     "--username", help="CalDAV username (or set CALDAV_TASKS_API_USERNAME env var)"
@@ -143,24 +153,21 @@ def main(
     dry: bool,
 ):
     """
-    Delete completed tasks that have been last modified more than DAYS_THRESHOLD days ago.
+    Delete completed tasks that have been last modified more than the specified days threshold.
 
     This script will connect to your CalDAV server, load tasks from the specified list,
     and delete completed tasks that haven't been modified within the threshold period.
 
-    LIST_UID: The UID of the task list to process
-    DAYS_THRESHOLD: Number of days - completed tasks older than this will be deleted
-
     Examples:
 
         # Dry run (safe - shows what would be deleted)
-        python autodelete.py my-list-uid 30 --dry
+        python autodelete.py --list-uid my-list-uid --days-threshold 30 --dry
 
         # Actually delete tasks (removes completed tasks older than 30 days)
-        python autodelete.py my-list-uid 30
+        python autodelete.py --list-uid my-list-uid --days-threshold 30
 
         # Use with custom server settings
-        python autodelete.py my-list-uid 7 --url https://my-server.com --username myuser
+        python autodelete.py --list-uid my-list-uid --days-threshold 7 --url https://my-server.com --username myuser
     """
     # Setup logging - use basic configuration since no logging_config module referenced
     if debug:
