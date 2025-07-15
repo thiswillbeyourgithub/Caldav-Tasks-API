@@ -263,6 +263,14 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
         # was effectively oldest-first if the goal is to now see latest-first after this reversal.
         limited_tasks.reverse()
 
+        # Debug: Print VTODO strings for each task before JSON output
+        logger.debug(f"Printing VTODO strings for {len(limited_tasks)} tasks:")
+        for i, task in enumerate(limited_tasks):
+            vtodo_string = task.to_ical()
+            logger.debug(
+                f"Task {i+1}/{len(limited_tasks)} (UID: {task.uid}) VTODO:\n{vtodo_string}"
+            )
+
         # Prepare data for JSON output
         output_data = [task.to_dict() for task in limited_tasks]
         click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
