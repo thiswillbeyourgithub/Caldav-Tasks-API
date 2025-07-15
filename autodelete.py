@@ -126,9 +126,10 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
     help="Verify SSL certificates (default: enabled)",
 )
 @click.option(
-    "--dry-run/--execute",
-    default=True,
-    help="Show what would be deleted without actually deleting (default: dry-run)",
+    "--dry",
+    is_flag=True,
+    default=False,
+    help="Show what would be deleted without actually deleting",
 )
 def main(
     list_uid: str,
@@ -139,7 +140,7 @@ def main(
     nextcloud_mode: bool,
     debug: bool,
     ssl_verify: bool,
-    dry_run: bool,
+    dry: bool,
 ):
     """
     Delete completed tasks that have been last modified more than DAYS_THRESHOLD days ago.
@@ -153,13 +154,13 @@ def main(
     Examples:
 
         # Dry run (safe - shows what would be deleted)
-        python autodelete.py my-list-uid 30
+        python autodelete.py my-list-uid 30 --dry
 
         # Actually delete tasks (removes completed tasks older than 30 days)
-        python autodelete.py my-list-uid 30 --execute
+        python autodelete.py my-list-uid 30
 
         # Use with custom server settings
-        python autodelete.py my-list-uid 7 --url https://my-server.com --username myuser --execute
+        python autodelete.py my-list-uid 7 --url https://my-server.com --username myuser
     """
     # Setup logging - use basic configuration since no logging_config module referenced
     if debug:
@@ -169,7 +170,7 @@ def main(
     logger.info(f"List UID: {list_uid}")
     logger.info(f"Days threshold: {days_threshold}")
     logger.info(
-        f"Mode: {'DRY RUN (safe preview)' if dry_run else 'EXECUTE (will delete tasks)'}"
+        f"Mode: {'DRY RUN (safe preview)' if dry else 'EXECUTE (will delete tasks)'}"
     )
 
     if days_threshold <= 0:
@@ -186,7 +187,7 @@ def main(
             nextcloud_mode=nextcloud_mode,
             debug=debug,
             target_lists=[list_uid],  # Only load the specified list
-            read_only=dry_run,  # Use read-only mode for dry runs to prevent accidental changes
+            read_only=dry,  # Use read-only mode for dry runs to prevent accidental changes
             ssl_verify_cert=ssl_verify,
         )
 
@@ -232,7 +233,7 @@ def main(
 
         # Display what will be deleted
         logger.info(f"\n{'=' * 50}")
-        logger.info(f"Tasks to be {'deleted' if not dry_run else 'deleted (DRY RUN)'}:")
+        logger.info(f"Tasks to be {'deleted' if not dry else 'deleted (DRY RUN)'}:")
         logger.info(f"{'=' * 50}")
 
         for i, task in enumerate(tasks_to_delete, 1):
@@ -252,10 +253,10 @@ def main(
             logger.info(f"     UID: {task.uid}")
             logger.info("")
 
-        if dry_run:
+        if dry:
             logger.info("=" * 50)
             logger.info(f"DRY RUN COMPLETE: Would delete {len(tasks_to_delete)} tasks")
-            logger.info("Use --execute flag to actually delete these tasks")
+            logger.info("Run without --dry flag to actually delete these tasks")
             logger.info("=" * 50)
         else:
             # Actually delete the tasks
