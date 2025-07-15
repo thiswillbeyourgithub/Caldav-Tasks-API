@@ -98,3 +98,9 @@ if api.task_lists:
         print(f"An unexpected error occurred: {e}")
 else:
     print("No task lists found. Cannot add a new task.")
+```
+
+
+## Other Examples
+
+In [the github repository for Caldav-Tasks-API](https://github.com/thiswillbeyourgithub/Caldav-Tasks-API), you can look inside the `examples` folder for other scripts.
