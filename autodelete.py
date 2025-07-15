@@ -99,6 +99,17 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
             )
             tasks_to_delete.append(task)
 
+    # Sort tasks by modification date, oldest first
+    def get_task_sort_key(task: TaskData) -> datetime.datetime:
+        """Helper function to extract sortable datetime from task."""
+        task_date = parse_ical_datetime(task.changed_at)
+        if task_date.tzinfo is None:
+            task_date = task_date.replace(tzinfo=datetime.timezone.utc)
+        return task_date
+
+    tasks_to_delete.sort(key=get_task_sort_key)
+    logger.debug(f"Sorted {len(tasks_to_delete)} tasks by modification date (oldest first)")
+
     return tasks_to_delete
 
 
