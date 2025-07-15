@@ -104,16 +104,13 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
 
 @click.command()
 @click.option(
-    "--list-uid", 
-    type=str, 
-    required=True, 
-    help="The UID of the task list to process"
+    "--list-uid", type=str, required=True, help="The UID of the task list to process"
 )
 @click.option(
-    "--days-threshold", 
-    type=int, 
-    required=True, 
-    help="Number of days - completed tasks older than this will be deleted"
+    "--days-threshold",
+    type=int,
+    required=True,
+    help="Number of days - completed tasks older than this will be deleted",
 )
 @click.option("--url", help="CalDAV server URL (or set CALDAV_TASKS_API_URL env var)")
 @click.option(
