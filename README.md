@@ -101,6 +101,9 @@ python -m caldav_tasks_api list-lists
 # List latest tasks from a specific list
 python -m caldav_tasks_api list-latest-tasks --list-uid <list-uid>
 
+# Dump all the tasks of a list as VTODO format
+python -m caldav_tasks_api dump-all-tasks --list-uid <list-uid>
+
 # Add a new task
 python -m caldav_tasks_api add-task --list-uid <list-uid> --summary "My new task"
 
