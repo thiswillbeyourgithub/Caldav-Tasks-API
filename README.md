@@ -78,9 +78,11 @@ Alternatively, you can install from source:
 The library supports configuration via environment variables:
 
 - `CALDAV_TASKS_API_URL`: CalDAV server URL
-- `CALDAV_TASKS_API_USERNAME`: CalDAV username  
+- `CALDAV_TASKS_API_USERNAME`: CalDAV username
 - `CALDAV_TASKS_API_PASSWORD`: CalDAV password
 - `CALDAV_TASKS_API_DEFAULT_LIST_UID`: Default task list UID for operations
+- `CALDAV_TASKS_API_DEFAULT_PRIORITY`: Default priority to use when creating tasks
+- `CALDAV_TASKS_API_LOG_LEVEL`: Default log level, by default `WARNING`
 
 ## Usage
 
@@ -100,6 +102,9 @@ python -m caldav_tasks_api list-lists
 
 # List latest tasks from a specific list
 python -m caldav_tasks_api list-latest-tasks --list-uid <list-uid>
+
+# Dump all the tasks of a list as VTODO format
+python -m caldav_tasks_api dump-all-tasks --list-uid <list-uid>
 
 # Add a new task
 python -m caldav_tasks_api add-task --list-uid <list-uid> --summary "My new task"

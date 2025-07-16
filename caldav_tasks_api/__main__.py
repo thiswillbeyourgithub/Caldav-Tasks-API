@@ -544,5 +544,107 @@ def list_lists(url, username, password, nextcloud_mode, debug):
         raise click.Abort()
 
 
+@cli.command(name="dump-all-tasks")
+@click.option("--url", help="CalDAV server URL (or set CALDAV_URL env var)")
+@click.option("--username", help="CalDAV username (or set CALDAV_USERNAME env var)")
+@click.option("--password", help="CalDAV password (or set CALDAV_PASSWORD env var)")
+@click.option(
+    "--nextcloud-mode/--no-nextcloud-mode",
+    default=True,
+    help="Adjust URL for Nextcloud specific path [default: enabled]",
+)
+@click.option(
+    "--debug/--no-debug",
+    default=False,
+    help="Enable debug mode with interactive console [default: disabled]",
+)
+@click.option(
+    "--list-uid",
+    default=None,
+    envvar="CALDAV_TASKS_API_DEFAULT_LIST_UID",
+    help="UID of the task list to dump all tasks from. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set.",
+)
+def dump_all_tasks(url, username, password, nextcloud_mode, debug, list_uid):
+    """Dump all tasks from a specified list in VTODO format."""
+    logger.debug(
+        f"CLI dump-all-tasks initiated with url: {'***' if url else 'from env'}, "
+        f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
+        f"debug: {debug}, list_uid: {list_uid}"
+    )
+
+    if not list_uid:
+        click.echo(
+            "Error: Task list UID must be provided via --list-uid argument or CALDAV_TASKS_API_DEFAULT_LIST_UID environment variable.",
+            err=True,
+        )
+        raise click.Abort()
+
+    try:
+        # This command is inherently read-only.
+        # Filter to only the specified list to optimize loading
+        api = get_api(
+            url,
+            username,
+            password,
+            nextcloud_mode,
+            debug,
+            target_lists=[list_uid],
+            read_only=True,
+        )
+
+        logger.info("Loading remote tasks...")
+        api.load_remote_data()
+
+        # Find the specified task list
+        target_task_list = None
+        for task_list in api.task_lists:
+            if task_list.uid == list_uid:
+                target_task_list = task_list
+                break
+
+        if not target_task_list:
+            click.echo(f"Error: Task list with UID '{list_uid}' not found.", err=True)
+            raise click.Abort()
+
+        click.echo(
+            f"# Dumping all tasks from list: '{target_task_list.name}' (UID: {list_uid})"
+        )
+        click.echo(f"# Total tasks: {len(target_task_list.tasks)}")
+        click.echo("")
+
+        if not target_task_list.tasks:
+            click.echo("# No tasks found in this list.")
+            return
+
+        # Print each task's VTODO format
+        for i, task in enumerate(target_task_list.tasks, 1):
+            click.echo(f"# Task {i}/{len(target_task_list.tasks)}: {task.text}")
+            click.echo(f"# UID: {task.uid}")
+            click.echo("")
+            vtodo_string = task.to_ical()
+            click.echo(vtodo_string)
+            click.echo("")  # Extra blank line between tasks
+
+        if debug:
+            click.echo(
+                "Debug mode: Starting interactive console. API and task list available as 'api', 'target_task_list'."
+            )
+            _globals = globals().copy()
+            _locals = locals().copy()
+            _globals.update(_locals)
+            code.interact(local=_globals)
+
+    except click.UsageError as ue:
+        click.echo(f"Configuration error: {ue}", err=True)
+        raise click.Abort()
+    except ConnectionError as ce:
+        click.echo(f"Connection failed: {ce}", err=True)
+        raise click.Abort()
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {e}")
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort()
+
+
 if __name__ == "__main__":
     cli()
