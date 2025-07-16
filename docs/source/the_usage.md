@@ -76,7 +76,7 @@ caldav-tasks-api list-lists > all_lists.json
 - `--username TEXT`: CalDAV username (or set `CALDAV_TASKS_API_USERNAME` env var)
 - `--password TEXT`: CalDAV password (or set `CALDAV_TASKS_API_PASSWORD` env var)
 - `--nextcloud-mode` / `--no-nextcloud-mode`: Adjust URL for Nextcloud (default: True)
-- `--debug` / `--no-debug`: Enable interactive debugging console (default: False)
+- `--debug` / `--no-debug`: Enable interactive debugging console (default: False). Also changes the log level, which by default is `WARNING` (or set `CALDAV_TASKS_API_LOG_LEVEL`)
 
 ### Specific command options:
 

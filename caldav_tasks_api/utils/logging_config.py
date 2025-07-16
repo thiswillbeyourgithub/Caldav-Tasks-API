@@ -12,7 +12,7 @@ def setup_logging():
 
     # Console logger
     # Determine console log level from environment variable, default to INFO
-    console_log_level = os.environ.get("CALDAV_TASKS_API_LOG_LEVEL", "INFO").upper()
+    console_log_level = os.environ.get("CALDAV_TASKS_API_LOG_LEVEL", "WARNING").upper()
     try:
         logger.add(
             sys.stderr,
@@ -23,14 +23,14 @@ def setup_logging():
     except ValueError:  # Handle invalid log level from env var
         logger.add(
             sys.stderr,
-            level="INFO",  # Default to INFO if env var is invalid
+            level="WARNING",  # Default to INFO if env var is invalid
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
             colorize=True,
         )
         logger.warning(
             f"Invalid CALDAV_TASKS_API_LOG_LEVEL '{console_log_level}'. Defaulting to INFO for console."
         )
-        console_log_level = "INFO"  # Update for the info message below
+        console_log_level = "WARNING"  # Update for the info message below
 
     # File logger
     # Using appname and appauthor (you might want to centralize these, e.g., from setup.py or a config)
