@@ -735,6 +735,77 @@ def test_task_ical_roundtrip():
     )
 
 
+def test_cli_dump_all_tasks_runs_successfully(
+    tasks_api_instance: TasksAPI, caldav_credentials
+):
+    """
+    Test that the CLI 'dump-all-tasks' command runs successfully.
+    This test uses a real list UID from the API instance and verifies
+    that the command produces VTODO-formatted output.
+    """
+    api = tasks_api_instance
+
+    # Find a list UID to use for the dump command
+    if not api.task_lists:
+        pytest.skip(
+            "No task lists found on the server. Skipping dump_all_tasks CLI test."
+        )
+
+    test_list_uid = api.task_lists[0].uid  # Use the first available list
+    test_list_name = api.task_lists[0].name
+
+    command = [
+        sys.executable,  # Path to current python interpreter
+        "-m",
+        "caldav_tasks_api",
+        "dump-all-tasks",  # The command to run
+        "--list-uid",
+        test_list_uid,  # Required list UID parameter
+    ]
+
+    print(f"Running CLI command: {' '.join(command)}")
+    print(f"Using list '{test_list_name}' (UID: {test_list_uid})")
+
+    try:
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+
+        # Basic validation of output
+        assert result.stdout, "dump-all-tasks should produce some output"
+
+        # Check for expected content in output
+        assert (
+            f"UID: {test_list_uid}" in result.stdout
+            or f"list: '{test_list_name}'" in result.stdout
+        ), "Output should reference the target list"
+
+        # If there are tasks, output should contain VTODO components
+        if api.task_lists[0].tasks:
+            assert (
+                "BEGIN:VTODO" in result.stdout
+            ), "Output should contain VTODO components when tasks exist"
+            assert (
+                "END:VTODO" in result.stdout
+            ), "Output should contain complete VTODO components"
+        else:
+            assert (
+                "No tasks found" in result.stdout
+            ), "Output should indicate when no tasks are found"
+
+        print(f"CLI command stdout (first 300 chars): {result.stdout[:300]}...")
+        print(f"CLI command stderr: {result.stderr}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"CLI command failed with exit code {e.returncode}")
+        print(f"Stdout: {e.stdout}")
+        print(f"Stderr: {e.stderr}")
+        pytest.fail(f"CLI command {' '.join(command)} failed with error: {e.stderr}")
+    except FileNotFoundError:
+        pytest.fail(
+            f"CLI command failed: `python -m caldav_tasks_api` could not be found. "
+            f"Ensure the package is installed correctly, e.g., `pip install -e .`"
+        )
+
+
 def test_task_parent_child_relationships(
     tasks_api_instance: TasksAPI, test_list_name: str
 ):
