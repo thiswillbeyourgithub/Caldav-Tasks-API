@@ -430,7 +430,7 @@ def test_cli_show_summary_json_runs_successfully(caldav_credentials):
     try:
         # check=True will raise CalledProcessError if the command returns a non-zero exit code.
         # capture_output=True can be used if we need to inspect stdout/stderr, but not needed here.
-        result = subprocess.run(command, check=True, capture_output=True, summary=True)
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
         print(f"CLI command stdout (first 200 chars): {result.stdout[:200]}...")
         print(f"CLI command stderr: {result.stderr}")
     except subprocess.CalledProcessError as e:
@@ -773,7 +773,7 @@ def test_cli_dump_all_tasks_runs_successfully(
     print(f"Using list '{test_list_name}' (UID: {test_list_uid})")
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, summary=True)
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
 
         # Basic validation of output
         assert result.stdout, "dump-all-tasks should produce some output"
