@@ -664,7 +664,7 @@ def test_task_ical_roundtrip():
     # Create a TaskData instance with various properties set
     original_task = TaskData(
         text="Test Task for iCal Roundtrip",
-        notes="These are some notes\nWith multiple lines\nAnd some special chars: ü, é, ñ",
+        description="These are some description\nWith multiple lines\nAnd some special chars: ü, é, ñ",
         due_date="20250101T120000Z",
         start_date="20240101",  # Date only format
         priority=1,
@@ -692,8 +692,8 @@ def test_task_ical_roundtrip():
         roundtrip_task.text == original_task.text
     ), "Text (SUMMARY) should be preserved"
     assert (
-        roundtrip_task.notes == original_task.notes
-    ), "Notes (DESCRIPTION) should be preserved"
+        roundtrip_task.description == original_task.description
+    ), "Description (DESCRIPTION) should be preserved"
     assert (
         roundtrip_task.due_date == original_task.due_date
     ), "DUE date should be preserved"

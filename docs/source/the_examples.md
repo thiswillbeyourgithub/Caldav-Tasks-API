@@ -38,8 +38,8 @@ for task_list in api.task_lists:
         print(f"    - [{status}] {task.text} (UID: {task.uid})")
         if task.due_date:
             print(f"      Due: {task.due_date}")
-        if task.notes:
-            print(f"      Notes: {task.notes[:50]}...")
+        if task.description:
+            print(f"      description: {task.description[:50]}...")
         if task.x_properties: # Check if there are any X-properties
             print(f"      X-Properties:")
             for key, value in task.x_properties.items(): # Iterate raw X-properties
@@ -56,7 +56,7 @@ if api.task_lists:
 
     new_task_data = TaskData(
         text="My important new task from API",
-        notes="This is a detailed description.",
+        description="This is a detailed description.",
         list_uid=target_list_uid, # Set the list_uid for the new task
         priority=5, # 1 (highest) to 9 (lowest), 0 (undefined)
         # x_properties={"X-CUSTOM-FIELD": "CustomValue"} # Can also pass a dict

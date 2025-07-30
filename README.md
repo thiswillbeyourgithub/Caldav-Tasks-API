@@ -113,7 +113,7 @@ python -m caldav_tasks_api add-task --list-uid <list-uid> --summary "My new task
 python -m caldav_tasks_api add-task \
   --list-uid <list-uid> \
   --summary "Important task" \
-  --notes "Task description" \
+  --description "Task description" \
   --priority 5 \
   --due-date 20240315 \
   --tag urgent --tag work
@@ -148,7 +148,7 @@ for task_list in api.task_lists:
 new_task = TaskData(
     text="My new task",
     list_uid="your-list-uid",
-    notes="Task description",
+    description="Task description",
     priority=5
 )
 created_task = api.add_task(new_task)

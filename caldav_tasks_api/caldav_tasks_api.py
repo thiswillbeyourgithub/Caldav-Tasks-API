@@ -515,7 +515,7 @@ class TasksAPI:
         )
         # Debug print for task recovery purposes
         logger.info(
-            f"DEBUG: Adding task with content - Text: '{task_data.text}', Notes: '{task_data.notes}', Priority: {task_data.priority}, Due: '{task_data.due_date}'"
+            f"DEBUG: Adding task with content - Text: '{task_data.text}', Description: '{task_data.description}', Priority: {task_data.priority}, Due: '{task_data.due_date}'"
         )
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before adding task.")
@@ -686,7 +686,7 @@ class TasksAPI:
             existing_task = self.get_task_by_global_uid(task_uid)
             if existing_task:
                 logger.info(
-                    f"DEBUG: Deleting task with content - Text: '{existing_task.text}', Notes: '{existing_task.notes}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'"
+                    f"DEBUG: Deleting task with content - Text: '{existing_task.text}', Description: '{existing_task.description}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'"
                 )
             else:
                 logger.info(
@@ -839,7 +839,7 @@ class TasksAPI:
                 update_ical_property("percent-complete", task_data.percent_complete)
 
                 # Optional properties that may be empty
-                update_ical_property("description", task_data.notes)
+                update_ical_property("description", task_data.description)
                 update_ical_property("due", task_data.due_date)
                 update_ical_property("dtstart", task_data.start_date)
                 update_ical_property(
@@ -928,7 +928,7 @@ class TasksAPI:
                 task_data.text = desired_text  # Always keep our intended text
 
                 # Copy other properties from server response
-                task_data.notes = refreshed_task_data.notes
+                task_data.description = refreshed_task_data.description
                 task_data.created_at = refreshed_task_data.created_at
                 task_data.changed_at = refreshed_task_data.changed_at
                 task_data.completed = refreshed_task_data.completed

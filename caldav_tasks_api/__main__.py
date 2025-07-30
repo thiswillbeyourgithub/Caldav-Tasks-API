@@ -317,7 +317,7 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
     help="UID of the task list to add the task to. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set. Mandatory if env var not set.",
 )
 @click.option("--summary", required=True, help="Summary/text of the task.")
-@click.option("--notes", help="Notes/description for the task.")
+@click.option("--description", help="Description for the task.")
 @click.option(
     "--priority",
     type=int,
@@ -357,7 +357,7 @@ def add_task(
     debug,
     list_uid,
     summary,
-    notes,
+    description,
     priority,
     due_date,
     start_date,
@@ -408,7 +408,7 @@ def add_task(
         task_data = TaskData(
             text=summary,
             list_uid=task_data_list_uid,
-            notes=notes or "",
+            description=description or "",
             priority=priority,
             due_date=due_date or "",
             start_date=start_date or "",
@@ -428,8 +428,8 @@ def add_task(
         click.echo(f"Task '{created_task.text}' added successfully!")
         click.echo(f"  UID: {created_task.uid}")
         click.echo(f"  List UID: {created_task.list_uid}")
-        if created_task.notes:
-            click.echo(f"  Notes: {created_task.notes}")
+        if created_task.description:
+            click.echo(f"  Description: {created_task.description}")
         if created_task.priority > 0:
             click.echo(f"  Priority: {created_task.priority}")
         if created_task.due_date:
