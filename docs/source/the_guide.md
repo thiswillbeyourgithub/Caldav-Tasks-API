@@ -58,7 +58,7 @@ caldav-tasks-api list-lists --url <your_url> --username <user> --password <pass>
 **Key Options:**
 - `--list-uid TEXT`: The UID of the task list where the task will be added. This is mandatory if the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable is not set.
 - `--summary TEXT`: The summary or title text for the new task. This is required.
-- `--notes TEXT`: Notes/description for the task.
+- `--description TEXT`: Description for the task.
 - `--priority INTEGER`: Priority of the task (0-9, where 0 means undefined) [default: 0].
 - `--due-date TEXT`: Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
 - `--start-date TEXT`: Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
@@ -69,7 +69,7 @@ caldav-tasks-api list-lists --url <your_url> --username <user> --password <pass>
 
 **Example:**
 ```bash
-caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries" --notes "Don't forget milk" --priority 5 --due-date 20240315
+caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> --list-uid "aabbccdd-eeff-1122-3344-556677889900" --summary "Buy groceries" --description "Don't forget milk" --priority 5 --due-date 20240315
 ```
 
 #### `list-latest-tasks`
@@ -149,7 +149,7 @@ This is the main class for initializing a connection to a CalDAV server and mana
 **Description:** Adds a new task to the CalDAV server. The task's details should be pre-configured in the `task_data` object. The target list UID can be specified directly via the `list_uid` argument, fall back to `task_data.list_uid`, or finally use the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable.
 
 **Parameters:**
-- `task_data` (`TaskData`): An instance of `TaskData` representing the new task to be created. Its attributes (e.g., `text`, `notes`, `due_date`) should be set as desired.
+- `task_data` (`TaskData`): An instance of `TaskData` representing the new task to be created. Its attributes (e.g., `summary`, `description`, `due_date`) should be set as desired.
 - `list_uid` (Optional[str], optional): The UID of the task list to add the task to. If `None`, the method attempts to determine the list UID as described above.
 
 **Returns:** The `TaskData` object representing the newly created task, updated with information from the server (such as the server-assigned UID if not initially provided, and timestamps).
@@ -192,7 +192,7 @@ For more detailed information on the `TasksAPI` class, including all its methods
 The Python API uses several dataclasses to represent CalDAV entities and their properties. The main ones are:
 
 - **`caldav_tasks_api.utils.data.TaskListData`**: Represents a task list (equivalent to a CalDAV calendar that supports VTODOs). Key attributes include `uid`, `name`, and `tasks` (a list of `TaskData` objects).
-- **`caldav_tasks_api.utils.data.TaskData`**: Represents an individual task (a VTODO component). Key attributes include `uid`, `text` (summary), `notes` (description), `completed`, `due_date`, `priority`, `x_properties`, etc. It also includes methods like `to_ical()` and `from_ical()` for VTODO string conversion.
+- **`caldav_tasks_api.utils.data.TaskData`**: Represents an individual task (a VTODO component). Key attributes include `uid`, `summary` (summary), `description` (description), `completed`, `due_date`, `priority`, `x_properties`, etc. It also includes methods like `to_ical()` and `from_ical()` for VTODO string conversion.
 - **`caldav_tasks_api.utils.data.XProperties`**: A specialized class for handling custom `X-` properties within a `TaskData` object, allowing both dictionary-style and attribute-style access.
 
 Detailed documentation for these data structures, including all their fields and methods, can be found in their docstrings.

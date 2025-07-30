@@ -55,7 +55,7 @@ caldav-tasks-api add-task --summary "My new task from CLI"
 # Add a more detailed task with various properties
 caldav-tasks-api add-task \
     --summary "Complete project proposal" \
-    --notes "Include budget analysis and timeline" \
+    --description "Include budget analysis and timeline" \
     --priority 5 \
     --due-date "20240315T170000Z" \
     --tag "work" \
@@ -87,7 +87,7 @@ caldav-tasks-api list-lists > all_lists.json
 - `add-task`:
   - `--list-uid TEXT`: UID of the task list (or `CALDAV_TASKS_API_DEFAULT_LIST_UID` env var). Mandatory if env var not set.
   - `--summary TEXT`: Summary/text of the task (required).
-  - `--notes TEXT`: Notes/description for the task.
+  - `--description TEXT`: Description for the task.
   - `--priority INTEGER`: Priority of the task (0-9, where 0 means undefined) [default: 0].
   - `--due-date TEXT`: Due date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).
   - `--start-date TEXT`: Start date in format YYYYMMDD or YYYYMMDDTHHMMSSZ (e.g., 20240315 or 20240315T143000Z).

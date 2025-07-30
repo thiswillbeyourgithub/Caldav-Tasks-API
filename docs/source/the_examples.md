@@ -35,11 +35,11 @@ for task_list in api.task_lists:
     print(f"  Tasks: {len(task_list.tasks)}")
     for task in task_list:  # TaskListData is iterable over its tasks
         status = "Completed" if task.completed else "Pending"
-        print(f"    - [{status}] {task.text} (UID: {task.uid})")
+        print(f"    - [{status}] {task.summary} (UID: {task.uid})")
         if task.due_date:
             print(f"      Due: {task.due_date}")
-        if task.notes:
-            print(f"      Notes: {task.notes[:50]}...")
+        if task.description:
+            print(f"      description: {task.description[:50]}...")
         if task.x_properties: # Check if there are any X-properties
             print(f"      X-Properties:")
             for key, value in task.x_properties.items(): # Iterate raw X-properties
@@ -55,8 +55,8 @@ if api.task_lists:
     target_list_uid = api.task_lists[0].uid
 
     new_task_data = TaskData(
-        text="My important new task from API",
-        notes="This is a detailed description.",
+        summary="My important new task from API",
+        description="This is a detailed description.",
         list_uid=target_list_uid, # Set the list_uid for the new task
         priority=5, # 1 (highest) to 9 (lowest), 0 (undefined)
         # x_properties={"X-CUSTOM-FIELD": "CustomValue"} # Can also pass a dict
@@ -72,15 +72,15 @@ if api.task_lists:
 
         created_task = api.add_task(new_task_data, target_list_uid) # Pass target_list_uid explicitly
         print(f"\n--- Created Task ---")
-        print(f"Successfully created task: '{created_task.text}' with UID: {created_task.uid} in list {target_list_uid}")
+        print(f"Successfully created task: '{created_task.summary}' with UID: {created_task.uid} in list {target_list_uid}")
         print(f"Server assigned created_at: {created_task.created_at}, changed_at: {created_task.changed_at}")
 
         # Example: Update the task we just created
         print(f"\n--- Updating Task ---")
-        created_task.text = "Updated task title"
+        created_task.summary = "Updated task title"
         created_task.priority = 1  # Higher priority
         updated_task = api.update_task(created_task) # update_task uses task_data.list_uid
-        print(f"Successfully updated task: '{updated_task.text}' with UID: {updated_task.uid}")
+        print(f"Successfully updated task: '{updated_task.summary}' with UID: {updated_task.uid}")
         print(f"Server updated changed_at: {updated_task.changed_at}")
 
         # Example: Delete the task

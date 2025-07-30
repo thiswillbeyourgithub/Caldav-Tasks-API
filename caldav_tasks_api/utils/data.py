@@ -174,7 +174,7 @@ class TaskData:
     deleted: bool = False  # Internal flag, might map to VTODO status or deletion
     due_date: str = ""  # DUE
     list_uid: str = ""  # Belongs to which TaskList/Calendar
-    notes: str = ""  # DESCRIPTION
+    description: str = ""  # DESCRIPTION
     notified: bool = False  # UI specific, not in standard VTODO
     parent: str = ""  # RELATED-TO (for subtasks)
     percent_complete: int = 0  # PERCENT-COMPLETE
@@ -183,7 +183,7 @@ class TaskData:
     start_date: str = ""  # DTSTART
     synced: bool = False  # Internal flag
     tags: list[str] = field(default_factory=lambda: [])  # CATEGORIES
-    text: str = ""  # SUMMARY
+    summary: str = ""  # SUMMARY
     trash: bool = False  # UI specific, might relate to 'deleted'
     uid: str = ""  # UID
     x_properties: XProperties = field(
@@ -216,7 +216,7 @@ class TaskData:
             if f.name == "uid":  # Already in the header
                 continue
             value = getattr(self, f.name)
-            # For potentially long string fields like 'notes' or 'text', truncate if too long for summary
+            # For potentially long string fields like 'description' or 'summary', truncate if too long for summary
             if isinstance(value, str) and len(value) > 70:
                 value_repr = f"'{value[:67]}...'"
             elif (
@@ -310,7 +310,7 @@ class TaskData:
         from loguru import logger
 
         logger.info(
-            f"DEBUG: TaskData.delete() called - Text: '{self.text}', Notes: '{self.notes}', Priority: {self.priority}, Due: '{self.due_date}', UID: '{self.uid}'"
+            f"DEBUG: TaskData.delete() called - Summary: '{self.summary}', Description: '{self.description}', Priority: {self.priority}, Due: '{self.due_date}', UID: '{self.uid}'"
         )
 
         return self._api_reference.delete_task_by_id(self.uid, self.list_uid)
@@ -320,11 +320,13 @@ class TaskData:
         ical: str = ""
         ical += "BEGIN:VTODO\n"
         ical += f"UID:{self.uid}\n"
-        ical += f"SUMMARY:{self.text}\n"
-        if self.notes:
+        ical += f"SUMMARY:{self.summary}\n"
+        if self.description:
             # Escape newlines and commas as per iCal spec
-            escaped_notes = self.notes.replace("\n", "\\n").replace(",", "\\,")
-            ical += f"DESCRIPTION:{escaped_notes}\n"  # Ensure DESCRIPTION is not empty
+            escaped_description = self.description.replace("\n", "\\n").replace(
+                ",", "\\,"
+            )
+            ical += f"DESCRIPTION:{escaped_description}\n"  # Ensure DESCRIPTION is not empty
 
         ical += f"DTSTAMP:{self.created_at}\n"  # Typically creation or last data stamp
         ical += f"LAST-MODIFIED:{self.changed_at}\n"
@@ -368,8 +370,8 @@ class TaskData:
         """Converts the TaskData instance to a dictionary."""
         data = {
             "uid": self.uid,
-            "text": self.text,
-            "notes": self.notes,
+            "summary": self.summary,
+            "description": self.description,
             "created_at": self.created_at,
             "changed_at": self.changed_at,
             "completed": self.completed,
@@ -431,9 +433,9 @@ class TaskData:
             if "UID" == prop_name:
                 task.uid = value
             elif "SUMMARY" == prop_name:
-                task.text = value
+                task.summary = value
             elif "DESCRIPTION" == prop_name:
-                task.notes = value.replace("\\n", "\n").replace(
+                task.description = value.replace("\\n", "\n").replace(
                     "\\,", ","
                 )  # Unescape common characters
             elif "DTSTAMP" == prop_name:

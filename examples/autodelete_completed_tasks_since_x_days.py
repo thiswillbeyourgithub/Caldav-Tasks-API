@@ -95,7 +95,7 @@ def get_tasks_to_delete(tasks: List[TaskData], days_threshold: int) -> List[Task
         if task_modified_date < cutoff_date:
             days_old = (cutoff_date - task_modified_date).days
             logger.debug(
-                f"Task '{task.text}' qualifies for deletion (modified {days_old} days ago)"
+                f"Task '{task.summary}' qualifies for deletion (modified {days_old} days ago)"
             )
             tasks_to_delete.append(task)
 
@@ -262,7 +262,7 @@ def main(
             ).days
 
             logger.info(
-                f"{i:3}. '{task.text[:60]}{'...' if len(task.text) > 60 else ''}'"
+                f"{i:3}. '{task.summary[:60]}{'...' if len(task.summary) > 60 else ''}'"
             )
             logger.info(
                 f"     Last modified: {modified_date.strftime('%Y-%m-%d %H:%M:%S UTC')} ({days_old} days ago)"
@@ -286,7 +286,9 @@ def main(
 
             for i, task in enumerate(tasks_to_delete, 1):
                 try:
-                    logger.info(f"Deleting {i}/{len(tasks_to_delete)}: '{task.text}'")
+                    logger.info(
+                        f"Deleting {i}/{len(tasks_to_delete)}: '{task.summary}'"
+                    )
                     task.delete()
                     deleted_count += 1
                     logger.info(f"  ✓ Successfully deleted")
