@@ -142,11 +142,11 @@ for task_list in api.task_lists:
     print(f"List: {task_list.name} ({len(task_list.tasks)} tasks)")
     
     for task in task_list.tasks:
-        print(f"  - {task.text}")
+        print(f"  - {task.summary}")
 
 # Create a new task
 new_task = TaskData(
-    text="My new task",
+    summary="My new task",
     list_uid="your-list-uid",
     description="Task description",
     priority=5
@@ -156,7 +156,7 @@ created_task = api.add_task(new_task)
 # Update a task
 task = api.get_task_by_global_uid("task-uid")
 if task:
-    task.text = "Updated task title"
+    task.summary = "Updated task title"
     api.update_task(task)
 ```
 

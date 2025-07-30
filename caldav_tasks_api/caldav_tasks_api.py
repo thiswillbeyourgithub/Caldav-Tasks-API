@@ -395,7 +395,7 @@ class TasksAPI:
             for task in task_list.tasks:
                 if task.uid == task_uid:
                     logger.trace(
-                        f"Found task '{task.text}' in list '{task_list.name}' for global UID {task_uid}"
+                        f"Found task '{task.summary}' in list '{task_list.name}' for global UID {task_uid}"
                     )
                     return task
         logger.debug(f"Task with global UID {task_uid} not found across any list.")
@@ -515,7 +515,7 @@ class TasksAPI:
         )
         # Debug print for task recovery purposes
         logger.info(
-            f"DEBUG: Adding task with content - Text: '{task_data.text}', Description: '{task_data.description}', Priority: {task_data.priority}, Due: '{task_data.due_date}'"
+            f"DEBUG: Adding task with content - Summary: '{task_data.summary}', Description: '{task_data.description}', Priority: {task_data.priority}, Due: '{task_data.due_date}'"
         )
         if not self.raw_calendars:
             logger.debug("Raw calendars not loaded, fetching them before adding task.")
@@ -538,9 +538,9 @@ class TasksAPI:
                 f"Task list (calendar) with UID '{effective_list_uid}' not found."
             )
 
-        # Save the desired text that we want to preserve from the client side
-        desired_text = (
-            task_data.text
+        # Save the desired summary that we want to preserve from the client side
+        desired_summary = (
+            task_data.summary
         )  # This should be correct as task_data is authoritative for content fields
 
         vtodo_ical_string = task_data.to_ical()  # task_data.list_uid is now correct
@@ -588,12 +588,12 @@ class TasksAPI:
                     f"  Task data updated with server href part as UID: {task_data.uid}, synced: {task_data.synced}. Full data not re-parsed."
                 )
 
-            # Final validation that our text was preserved
-            if task_data.text != desired_text:
+            # Final validation that our summary was preserved
+            if task_data.summary != desired_summary:
                 logger.error(
-                    f"  Final check: Text still wrong! Forcing: '{desired_text}', Current: '{task_data.text}'"
+                    f"  Final check: Summary still wrong! Forcing: '{desired_summary}', Current: '{task_data.summary}'"
                 )
-                task_data.text = desired_text  # Force one last time
+                task_data.summary = desired_summary  # Force one last time
 
             # Final validation with a completely fresh fetch
             try:
@@ -604,17 +604,19 @@ class TasksAPI:
                     fresh_task_data = TaskData.from_ical(
                         fresh_task_obj.data, list_uid=effective_list_uid
                     )
-                    if fresh_task_data.text != desired_text:
+                    if fresh_task_data.summary != desired_summary:
                         logger.warning(
-                            f"  Final verification: Server still has different text after fresh fetch."
+                            f"  Final verification: Server still has different summary after fresh fetch."
                         )
                         logger.warning(
-                            f"  Server: '{fresh_task_data.text}', Desired: '{desired_text}'"
+                            f"  Server: '{fresh_task_data.summary}', Desired: '{desired_summary}'"
                         )
 
                         # One last attempt with a direct summary update
                         try:
-                            fresh_task_obj.icalendar_component["summary"] = desired_text
+                            fresh_task_obj.icalendar_component["summary"] = (
+                                desired_summary
+                            )
                             fresh_task_obj.save()
                             logger.info(
                                 f"  Made one final direct summary update in verification phase"
@@ -623,14 +625,14 @@ class TasksAPI:
                             logger.warning(f"  Final update attempt failed: {e_final}")
                     else:
                         logger.info(
-                            f"  Final verification successful: Server confirms text is '{fresh_task_data.text}'"
+                            f"  Final verification successful: Server confirms summary is '{fresh_task_data.summary}'"
                         )
             except Exception as e_final_verify:
                 logger.warning(
                     f"  Final verification failed (non-critical): {e_final_verify}"
                 )
 
-            # Always return the task with our desired text, even if server might disagree
+            # Always return the task with our desired summary, even if server might disagree
             # The next sync will attempt to resolve any remaining discrepancy
             task_data._api_reference = (
                 self  # Ensure the returned task has the API reference
@@ -686,7 +688,7 @@ class TasksAPI:
             existing_task = self.get_task_by_global_uid(task_uid)
             if existing_task:
                 logger.info(
-                    f"DEBUG: Deleting task with content - Text: '{existing_task.text}', Description: '{existing_task.description}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'"
+                    f"DEBUG: Deleting task with content - Summary: '{existing_task.summary}', Description: '{existing_task.description}', Priority: {existing_task.priority}, Due: '{existing_task.due_date}'"
                 )
             else:
                 logger.info(
@@ -811,12 +813,12 @@ class TasksAPI:
                 f"  Found VTODO by UID '{task_data.uid}' (URL: {server_task_obj.url}) in calendar '{target_raw_calendar.name}'."
             )
 
-            # Save the desired text that we want to preserve from the client side
-            desired_text = task_data.text
+            # Save the desired summary that we want to preserve from the client side
+            desired_summary = task_data.summary
 
-            # Ensure text is correctly set before generating iCal
-            logger.debug(f"  Setting task text to: '{desired_text}'")
-            task_data.text = desired_text
+            # Ensure summary is correctly set before generating iCal
+            logger.debug(f"  Setting task summary to: '{desired_summary}'")
+            task_data.summary = desired_summary
 
             # Define property handling helper function to reduce repetition
             def update_ical_property(name, value, component=None):
@@ -834,7 +836,7 @@ class TasksAPI:
                 logger.debug("Updating task properties directly on iCalendar component")
 
                 # Core properties that should always be set
-                update_ical_property("summary", desired_text)
+                update_ical_property("summary", desired_summary)
                 update_ical_property("last-modified", task_data.changed_at)
                 update_ical_property("percent-complete", task_data.percent_complete)
 
@@ -890,7 +892,7 @@ class TasksAPI:
                 # Approach 2: Update specific properties
                 if not success:
                     try:
-                        properties_dict = {"SUMMARY": desired_text}
+                        properties_dict = {"SUMMARY": desired_summary}
                         server_task_obj.update_properties(properties_dict)
                         logger.info(
                             f"Fallback 2: Updated at least the summary property"
@@ -902,7 +904,7 @@ class TasksAPI:
                 # Approach 3: Use set_summary if available
                 if not success and hasattr(server_task_obj, "set_summary"):
                     try:
-                        server_task_obj.set_summary(desired_text)
+                        server_task_obj.set_summary(desired_summary)
                         logger.info(
                             f"Fallback 3: Updated summary using set_summary() method"
                         )
@@ -923,9 +925,9 @@ class TasksAPI:
                 )
 
                 # Update the original task_data instance with server-authoritative values
-                # but preserve our desired text which may not be reflected properly
+                # but preserve our desired summary which may not be reflected properly
                 task_data.uid = refreshed_task_data.uid
-                task_data.text = desired_text  # Always keep our intended text
+                task_data.summary = desired_summary  # Always keep our intended summary
 
                 # Copy other properties from server response
                 task_data.description = refreshed_task_data.description
@@ -943,7 +945,7 @@ class TasksAPI:
 
                 task_data.synced = True
                 logger.debug(
-                    f"Task data updated and synced with server response. Text: '{task_data.text}'"
+                    f"Task data updated and synced with server response. Summary: '{task_data.summary}'"
                 )
             else:
                 # This case should ideally not happen if save() was successful

@@ -316,7 +316,7 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
     envvar="CALDAV_TASKS_API_DEFAULT_LIST_UID",
     help="UID of the task list to add the task to. Defaults to CALDAV_TASKS_API_DEFAULT_LIST_UID env var if set. Mandatory if env var not set.",
 )
-@click.option("--summary", required=True, help="Summary/text of the task.")
+@click.option("--summary", required=True, help="Summary/summary of the task.")
 @click.option("--description", help="Description for the task.")
 @click.option(
     "--priority",
@@ -406,7 +406,7 @@ def add_task(
         tags_list = list(tag) if tag else []
 
         task_data = TaskData(
-            text=summary,
+            summary=summary,
             list_uid=task_data_list_uid,
             description=description or "",
             priority=priority,
@@ -425,7 +425,7 @@ def add_task(
         )
         created_task = api.add_task(task_data, list_uid)
 
-        click.echo(f"Task '{created_task.text}' added successfully!")
+        click.echo(f"Task '{created_task.summary}' added successfully!")
         click.echo(f"  UID: {created_task.uid}")
         click.echo(f"  List UID: {created_task.list_uid}")
         if created_task.description:
@@ -618,7 +618,7 @@ def dump_all_tasks(url, username, password, nextcloud_mode, debug, list_uid):
 
         # Print each task's VTODO format
         for i, task in enumerate(target_task_list.tasks, 1):
-            click.echo(f"# Task {i}/{len(target_task_list.tasks)}: {task.text}")
+            click.echo(f"# Task {i}/{len(target_task_list.tasks)}: {task.summary}")
             click.echo(f"# UID: {task.uid}")
             click.echo("")
             vtodo_string = task.to_ical()

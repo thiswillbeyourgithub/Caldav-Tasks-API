@@ -55,9 +55,9 @@ def test_find_tasks_in_lists(tasks_api_instance: TasksAPI):
                 ), f"Each task in list '{task_list.name}' should be TaskData."
                 assert task.uid, f"Task in list '{task_list.name}' should have a UID."
                 assert (
-                    task.text is not None
-                ), f"Task UID '{task.uid}' in list '{task_list.name}' should have text."
-                print(f"  Found task: {task.text[:50]}... (UID: {task.uid})")
+                    task.summary is not None
+                ), f"Task UID '{task.uid}' in list '{task_list.name}' should have summary."
+                print(f"  Found task: {task.summary[:50]}... (UID: {task.uid})")
 
     if not found_any_task:
         print("Warning: No tasks found in any list. Test might not be comprehensive.")
@@ -86,11 +86,11 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
 
     # --- Create Task ---
     original_task_count = len(target_list.tasks)
-    new_task_text = f"Test Task - {uuid.uuid4()}"
-    task_to_create = TaskData(text=new_task_text, list_uid=target_list.uid)
+    new_task_summary = f"Test Task - {uuid.uuid4()}"
+    task_to_create = TaskData(summary=new_task_summary, list_uid=target_list.uid)
 
     print(
-        f"Attempting to create task '{new_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
+        f"Attempting to create task '{new_task_summary}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
 
     task_to_create.priority = 3  # Set priority on TaskData object
@@ -99,7 +99,9 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
         created_task_data is not None
     ), "add_task should return the created task data."
     assert created_task_data.uid, "Created task data should have a UID."
-    assert created_task_data.text == new_task_text, "Created task text mismatch."
+    assert (
+        created_task_data.summary == new_task_summary
+    ), "Created task summary mismatch."
     assert created_task_data.synced is True, "Created task should be marked as synced."
 
     # Verify task is in the list by re-fetching or checking local state if add_task updates it
@@ -117,17 +119,17 @@ def test_create_and_delete_task(tasks_api_instance: TasksAPI, test_list_name: st
     created_task_on_server = None
     for task in target_list_after_add.tasks:
         if (
-            task.text == new_task_text
+            task.summary == new_task_summary
         ):  # Or match by UID if add_task returns the server-assigned UID
             created_task_on_server = task
             break
 
     assert (
         created_task_on_server is not None
-    ), f"Created task '{new_task_text}' not found in list after add."
+    ), f"Created task '{new_task_summary}' not found in list after add."
     assert created_task_on_server.uid, "Task created on server must have a UID."
     print(
-        f"Successfully created task '{created_task_on_server.text}' with UID '{created_task_on_server.uid}'"
+        f"Successfully created task '{created_task_on_server.summary}' with UID '{created_task_on_server.uid}'"
     )
 
     # --- Delete Task ---
@@ -194,14 +196,14 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
     ), "Target list not found after reloading before add."
     original_task_count = len(target_list_before_add.tasks)
 
-    new_task_text = f"Single Test Task - {uuid.uuid4()}"
+    new_task_summary = f"Single Test Task - {uuid.uuid4()}"
     task_to_create = TaskData(
-        text=new_task_text,
+        summary=new_task_summary,
         list_uid=target_list_before_add.uid,  # Use UID from the reloaded list
     )
 
     print(
-        f"Attempting to create task '{new_task_text}' in list '{target_list_before_add.name}' (UID: {target_list_before_add.uid})"
+        f"Attempting to create task '{new_task_summary}' in list '{target_list_before_add.name}' (UID: {target_list_before_add.uid})"
     )
 
     created_task_data = api.add_task(
@@ -211,7 +213,9 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
         created_task_data is not None
     ), "add_task should return the created task data."
     assert created_task_data.uid, "Created task data should have a UID."
-    assert created_task_data.text == new_task_text, "Created task text mismatch."
+    assert (
+        created_task_data.summary == new_task_summary
+    ), "Created task summary mismatch."
     assert created_task_data.synced is True, "Created task should be marked as synced."
 
     # Verify task is in the list by re-fetching
@@ -228,7 +232,7 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
     ), "Task count should increase by 1 after adding."
 
     created_task_on_server = None
-    # Match by the UID returned by add_task, which is more reliable than text
+    # Match by the UID returned by add_task, which is more reliable than summary
     for task in target_list_after_add.tasks:
         if task.uid == created_task_data.uid:
             created_task_on_server = task
@@ -236,12 +240,12 @@ def test_create_single_task(tasks_api_instance: TasksAPI, test_list_name: str):
 
     assert (
         created_task_on_server is not None
-    ), f"Created task '{new_task_text}' (UID: {created_task_data.uid}) not found in list after add."
+    ), f"Created task '{new_task_summary}' (UID: {created_task_data.uid}) not found in list after add."
     assert (
-        created_task_on_server.text == new_task_text
-    ), "Text of task on server does not match."
+        created_task_on_server.summary == new_task_summary
+    ), "summary of task on server does not match."
     print(
-        f"Successfully created task '{created_task_on_server.text}' with UID '{created_task_on_server.uid}'"
+        f"Successfully created task '{created_task_on_server.summary}' with UID '{created_task_on_server.uid}'"
     )
 
 
@@ -269,21 +273,23 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
     assert target_list.uid is not None, "Target list UID should not be None"
 
     # --- Create Task ---
-    initial_task_text = f"Initial Name - {uuid.uuid4()}"
-    task_to_create = TaskData(text=initial_task_text, list_uid=target_list.uid)
+    initial_task_summary = f"Initial Name - {uuid.uuid4()}"
+    task_to_create = TaskData(summary=initial_task_summary, list_uid=target_list.uid)
 
     print(
-        f"Attempting to create task '{initial_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
+        f"Attempting to create task '{initial_task_summary}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
     created_task_data = api.add_task(task_data=task_to_create, list_uid=target_list.uid)
     assert (
         created_task_data is not None
     ), "add_task should return the created task data."
     assert created_task_data.uid, "Created task data should have a UID."
-    assert created_task_data.text == initial_task_text, "Created task text mismatch."
+    assert (
+        created_task_data.summary == initial_task_summary
+    ), "Created task summary mismatch."
     assert created_task_data.synced is True, "Created task should be marked as synced."
     print(
-        f"Successfully created task '{created_task_data.text}' with UID '{created_task_data.uid}'"
+        f"Successfully created task '{created_task_data.summary}' with UID '{created_task_data.uid}'"
     )
 
     # Add delay to ensure the server has time to process the creation
@@ -292,12 +298,12 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
     time.sleep(2)
 
     # --- Rename Task ---
-    renamed_task_text = f"Renamed Task - {uuid.uuid4()}"
+    renamed_task_summary = f"Renamed Task - {uuid.uuid4()}"
     task_to_update = created_task_data  # Work with the instance returned by add_task
-    task_to_update.text = renamed_task_text
+    task_to_update.summary = renamed_task_summary
 
     print(
-        f"Attempting to rename task UID '{task_to_update.uid}' to '{renamed_task_text}'"
+        f"Attempting to rename task UID '{task_to_update.uid}' to '{renamed_task_summary}'"
     )
     updated_task_data = api.update_task(task_data=task_to_update)
     assert (
@@ -307,8 +313,8 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
         updated_task_data.uid == created_task_data.uid
     ), "Updated task UID should match original."
     assert (
-        updated_task_data.text == renamed_task_text
-    ), "Updated task text mismatch after update call."
+        updated_task_data.summary == renamed_task_summary
+    ), "Updated task summary mismatch after update call."
     assert updated_task_data.synced is True, "Updated task should be marked as synced."
     print(f"Successfully called update_task for task UID '{updated_task_data.uid}'")
 
@@ -329,10 +335,10 @@ def test_create_and_rename_task(tasks_api_instance: TasksAPI, test_list_name: st
         renamed_task_on_server is not None
     ), f"Task UID '{updated_task_data.uid}' not found in list after rename."
     assert (
-        renamed_task_on_server.text == renamed_task_text
-    ), f"Task text on server ('{renamed_task_on_server.text}') does not match expected renamed text ('{renamed_task_text}')."
+        renamed_task_on_server.summary == renamed_task_summary
+    ), f"Task summary on server ('{renamed_task_on_server.summary}') does not match expected renamed summary ('{renamed_task_summary}')."
     print(
-        f"Successfully verified renamed task '{renamed_task_on_server.text}' (UID: '{renamed_task_on_server.uid}') on server."
+        f"Successfully verified renamed task '{renamed_task_on_server.summary}' (UID: '{renamed_task_on_server.uid}') on server."
     )
 
 
@@ -367,7 +373,7 @@ def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
     )
     for task in target_list.tasks:
         assert isinstance(task, TaskData), "Task object is not of type TaskData."
-        print(f"  Testing to_dict for task: {task.text[:50]}... (UID: {task.uid})")
+        print(f"  Testing to_dict for task: {task.summary[:50]}... (UID: {task.uid})")
         task_dict = task.to_dict()
 
         assert task_dict is not None, "to_dict() should return a dictionary, not None."
@@ -379,10 +385,10 @@ def test_task_to_dict(tasks_api_instance: TasksAPI, test_list_name: str):
             task_dict["uid"] == task.uid
         ), "Task dictionary 'uid' should match task.uid."
 
-        assert "text" in task_dict, "Task dictionary should contain 'text'."
+        assert "summary" in task_dict, "Task dictionary should contain 'summary'."
         assert (
-            task_dict["text"] == task.text
-        ), "Task dictionary 'text' should match task.text."
+            task_dict["summary"] == task.summary
+        ), "Task dictionary 'summary' should match task.summary."
 
         assert "list_uid" in task_dict, "Task dictionary should contain 'list_uid'."
         assert (
@@ -424,7 +430,7 @@ def test_cli_show_summary_json_runs_successfully(caldav_credentials):
     try:
         # check=True will raise CalledProcessError if the command returns a non-zero exit code.
         # capture_output=True can be used if we need to inspect stdout/stderr, but not needed here.
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        result = subprocess.run(command, check=True, capture_output=True, summary=True)
         print(f"CLI command stdout (first 200 chars): {result.stdout[:200]}...")
         print(f"CLI command stderr: {result.stderr}")
     except subprocess.CalledProcessError as e:
@@ -465,7 +471,7 @@ def test_add_task_in_read_only_mode(
         target_list_uid = "dummy-list-uid-for-read-only-test"
 
     task_to_create = TaskData(
-        text=f"Read-Only Test Task - {uuid.uuid4()}", list_uid=target_list_uid
+        summary=f"Read-Only Test Task - {uuid.uuid4()}", list_uid=target_list_uid
     )
 
     with pytest.raises(PermissionError) as excinfo:
@@ -542,7 +548,7 @@ def test_update_task_in_read_only_mode(
     task_to_update = TaskData(
         uid=existing_task_uid,
         list_uid=target_list_uid,  # type: ignore
-        text=f"Attempted Update - {uuid.uuid4()}",
+        summary=f"Attempted Update - {uuid.uuid4()}",
     )
 
     with pytest.raises(PermissionError) as excinfo:
@@ -577,10 +583,10 @@ def test_create_update_xprop_delete_task(
     assert target_list.uid is not None, "Target list UID should not be None"
 
     # --- Create Task ---
-    new_task_text = f"X-Prop Test Task - {uuid.uuid4()}"
-    task_to_create = TaskData(text=new_task_text, list_uid=target_list.uid)
+    new_task_summary = f"X-Prop Test Task - {uuid.uuid4()}"
+    task_to_create = TaskData(summary=new_task_summary, list_uid=target_list.uid)
 
-    print(f"Creating task '{new_task_text}' in list '{target_list.name}'")
+    print(f"Creating task '{new_task_summary}' in list '{target_list.name}'")
     created_task = api.add_task(task_data=task_to_create, list_uid=target_list.uid)
     assert created_task.uid, "Created task should have a UID"
     assert created_task.synced, "Created task should be marked as synced"
@@ -611,7 +617,7 @@ def test_create_update_xprop_delete_task(
 
     assert (
         found_task is not None
-    ), f"Task '{new_task_text}' (UID: {created_task.uid}) should be found after reload"
+    ), f"Task '{new_task_summary}' (UID: {created_task.uid}) should be found after reload"
 
     # Check that the X property exists
     x_props = found_task.x_properties.get_raw_properties()
@@ -663,7 +669,7 @@ def test_task_ical_roundtrip():
     """
     # Create a TaskData instance with various properties set
     original_task = TaskData(
-        text="Test Task for iCal Roundtrip",
+        summary="Test Task for iCal Roundtrip",
         description="These are some description\nWith multiple lines\nAnd some special chars: ü, é, ñ",
         due_date="20250101T120000Z",
         start_date="20240101",  # Date only format
@@ -689,8 +695,8 @@ def test_task_ical_roundtrip():
     # Verify that key properties were preserved
     assert roundtrip_task.uid == original_task.uid, "UID should be preserved"
     assert (
-        roundtrip_task.text == original_task.text
-    ), "Text (SUMMARY) should be preserved"
+        roundtrip_task.summary == original_task.summary
+    ), "Summary (SUMMARY) should be preserved"
     assert (
         roundtrip_task.description == original_task.description
     ), "Description (DESCRIPTION) should be preserved"
@@ -767,7 +773,7 @@ def test_cli_dump_all_tasks_runs_successfully(
     print(f"Using list '{test_list_name}' (UID: {test_list_uid})")
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        result = subprocess.run(command, check=True, capture_output=True, summary=True)
 
         # Basic validation of output
         assert result.stdout, "dump-all-tasks should produce some output"
@@ -838,11 +844,11 @@ def test_task_parent_child_relationships(
     assert target_list.uid is not None, "Target list UID should not be None"
 
     # --- Create Parent Task ---
-    parent_task_text = f"Test Parent Task - {uuid.uuid4()}"
-    parent_to_create = TaskData(text=parent_task_text, list_uid=target_list.uid)
+    parent_task_summary = f"Test Parent Task - {uuid.uuid4()}"
+    parent_to_create = TaskData(summary=parent_task_summary, list_uid=target_list.uid)
 
     print(
-        f"Attempting to create parent task '{parent_task_text}' in list '{target_list.name}' (UID: {target_list.uid})"
+        f"Attempting to create parent task '{parent_task_summary}' in list '{target_list.name}' (UID: {target_list.uid})"
     )
     created_parent_task = api.add_task(
         task_data=parent_to_create, list_uid=target_list.uid
@@ -851,24 +857,26 @@ def test_task_parent_child_relationships(
         created_parent_task is not None
     ), "add_task (parent) should return the created task data."
     assert created_parent_task.uid, "Created parent task data should have a UID."
-    assert created_parent_task.text == parent_task_text, "Parent task text mismatch."
+    assert (
+        created_parent_task.summary == parent_task_summary
+    ), "Parent task summary mismatch."
     assert (
         created_parent_task.synced is True
     ), "Created parent task should be marked as synced."
     print(
-        f"Successfully created parent task '{created_parent_task.text}' with UID '{created_parent_task.uid}'"
+        f"Successfully created parent task '{created_parent_task.summary}' with UID '{created_parent_task.uid}'"
     )
 
     # --- Create Child Task ---
-    child_task_text = f"Test Child Task - {uuid.uuid4()}"
+    child_task_summary = f"Test Child Task - {uuid.uuid4()}"
     child_to_create = TaskData(
-        text=child_task_text,
+        summary=child_task_summary,
         list_uid=target_list.uid,
         parent=created_parent_task.uid,  # Link to the parent's UID
     )
 
     print(
-        f"Attempting to create child task '{child_task_text}' linked to parent UID '{created_parent_task.uid}'"
+        f"Attempting to create child task '{child_task_summary}' linked to parent UID '{created_parent_task.uid}'"
     )
     created_child_task = api.add_task(
         task_data=child_to_create, list_uid=target_list.uid
@@ -877,7 +885,9 @@ def test_task_parent_child_relationships(
         created_child_task is not None
     ), "add_task (child) should return the created task data."
     assert created_child_task.uid, "Created child task data should have a UID."
-    assert created_child_task.text == child_task_text, "Child task text mismatch."
+    assert (
+        created_child_task.summary == child_task_summary
+    ), "Child task summary mismatch."
     assert (
         created_child_task.parent == created_parent_task.uid
     ), "Child task parent UID mismatch."
@@ -885,7 +895,7 @@ def test_task_parent_child_relationships(
         created_child_task.synced is True
     ), "Created child task should be marked as synced."
     print(
-        f"Successfully created child task '{created_child_task.text}' with UID '{created_child_task.uid}'"
+        f"Successfully created child task '{created_child_task.summary}' with UID '{created_child_task.uid}'"
     )
 
     # --- Reload data: Crucial for populating _api_reference correctly for all tasks in api.task_lists ---
