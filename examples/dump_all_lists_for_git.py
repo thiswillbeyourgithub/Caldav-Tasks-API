@@ -190,7 +190,7 @@ def process_task_list(api: TasksAPI, task_list: TaskListData, output_dir: Path) 
                 vtodo_blocks.append(vtodo_content)
             except Exception as e:
                 click.echo(
-                    f"  Warning: Failed to convert task '{task.text}' to iCal: {e}"
+                    f"  Warning: Failed to convert task '{task.summary}' to iCal: {e}"
                 )
                 continue
 
