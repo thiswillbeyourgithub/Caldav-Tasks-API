@@ -23,7 +23,7 @@ setup(
     install_requires=[
         "caldav>=1.4.0",
         "click>=8.1.8",
-        "urllib3>=2.4.0",
+        "urllib3>=2.5.0",
         "loguru>=0.7.0",
         "platformdirs>=3.0.0",
     ],
