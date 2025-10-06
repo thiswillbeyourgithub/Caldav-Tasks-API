@@ -1,5 +1,5 @@
 import pdb
-import urllib3
+import requests
 import caldav
 import datetime  # Added for updating timestamps
 import os  # Added for environment variable access
@@ -125,10 +125,8 @@ class TasksAPI:
     def _connect(self, password: str) -> None:
         """Establishes connection to the CalDAV server."""
         logger.info(f"Attempting to connect to CalDAV server at: {self.url}")
-        urllib3.disable_warnings(
-            urllib3.exceptions.InsecureRequestWarning
-        )  # Optional: suppress SSL warnings for self-signed certs
-        logger.debug("InsecureRequestWarning suppressed for urllib3.")
+        requests.packages.urllib3.disable_warnings()  # Suppress SSL warnings for self-signed certs
+        logger.debug("InsecureRequestWarning suppressed via requests.packages.urllib3.")
 
         try:
             # Note: caldav.DAVClient is a context manager, but we can use it directly
