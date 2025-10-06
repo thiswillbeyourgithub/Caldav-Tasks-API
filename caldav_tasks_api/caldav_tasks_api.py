@@ -125,6 +125,8 @@ class TasksAPI:
     def _connect(self, password: str) -> None:
         """Establishes connection to the CalDAV server."""
         logger.info(f"Attempting to connect to CalDAV server at: {self.url}")
+        requests.packages.urllib3.disable_warnings()  # Suppress SSL warnings for self-signed certs
+        logger.debug("InsecureRequestWarning suppressed via requests.packages.urllib3.")
 
         try:
             # Note: caldav.DAVClient is a context manager, but we can use it directly
