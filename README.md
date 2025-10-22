@@ -131,7 +131,9 @@ from caldav_tasks_api.utils.data import TaskData
 api = TasksAPI(
     url="https://your-server.com/remote.php/dav/",
     username="your-username", 
-    password="your-password"
+    password="your-password",
+    # include_completed=False,  # True by default but loading ALL tasks can be slow
+    # target_lists=["my frequent list"],  # set this to load only a subset of your calendars, faster
 )
 
 # Load all task lists and tasks

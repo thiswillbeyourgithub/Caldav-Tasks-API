@@ -17,9 +17,10 @@ try:
         username=os.environ.get("CALDAV_TASKS_API_USERNAME", "YOUR_USERNAME"),
         password=os.environ.get("CALDAV_TASKS_API_PASSWORD", "YOUR_PASSWORD"),
         # nextcloud_mode=True,  # Default, adjust if not using Nextcloud
-        # target_lists=["Personal", "Work"], # Optional: load only specific lists by name or UID
+        # target_lists=["Personal", "Work"], # Optional: load only specific lists by name or UID, faster
         # debug=True, # Optional: enable PDB for certain exceptions
         # read_only=False, # Optional: set to True to prevent any modifications to the server (default: False)
+        # include_completed=False,  # True by default but loading ALL tasks can be slow
     )
 except ConnectionError as e:
     print(f"Failed to connect: {e}")
