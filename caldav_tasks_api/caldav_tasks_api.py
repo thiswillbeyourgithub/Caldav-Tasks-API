@@ -228,7 +228,9 @@ class TasksAPI:
             failed_tasks_in_list_count = 0
 
             try:
-                todos_from_caldav: list[Todo] = cal.todos(include_completed=self.include_completed)
+                todos_from_caldav: list[Todo] = cal.todos(
+                    include_completed=self.include_completed
+                )
                 logger.debug(
                     f"  Found {len(todos_from_caldav)} tasks in '{task_list_data.name}' via cal.todos() (include_completed={self.include_completed})."
                 )
