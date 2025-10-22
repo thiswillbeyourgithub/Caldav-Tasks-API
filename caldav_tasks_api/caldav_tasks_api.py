@@ -39,7 +39,7 @@ class TasksAPI:
             password: The password for authentication. If None, reads from CALDAV_TASKS_API_PASSWORD environment variable.
             nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
             debug: If True, enables PDB post-mortem debugging on specific errors.
-            target_lists: Optional list of calendar names or UIDs to filter by.
+            target_lists: Optional list of calendar names or UIDs to filter by. If you have performance issues, use it to load only a subset of task lists.
             read_only: If True, API operates in read-only mode, preventing modifications.
             ssl_verify_cert: If True, verifies SSL certificates. Set to False for self-signed certs.
 
