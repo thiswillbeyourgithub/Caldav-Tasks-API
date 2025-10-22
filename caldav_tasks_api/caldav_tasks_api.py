@@ -89,7 +89,7 @@ class TasksAPI:
         self._connect(password_for_connection)
 
         # Automatically load task data to populate task_lists during initialization
-        self.load_remote_data()
+        self.load_remote_data(reload=False)
 
     def _adjust_url(self) -> None:
         """Adjusts the URL, e.g., adding https or Nextcloud's CalDAV path."""
@@ -197,7 +197,7 @@ class TasksAPI:
             logger.error(f"Error fetching calendars from server: {e}", exc_info=True)
             self.raw_calendars = []  # Reset if error
 
-    def load_remote_data(self) -> None:
+    def load_remote_data(self, reload: bool = True) -> None:
         """
         Loads all task lists and tasks from the remote CalDAV server into memory.
         This will overwrite any existing local data in self.task_lists
@@ -206,8 +206,11 @@ class TasksAPI:
             logger.error("Cannot load remote data: Not connected (no principal).")
             raise ConnectionError("Not connected to CalDAV server.")
 
-        logger.info("Loading remote data...")
-        self._fetch_raw_calendars()  # Refresh the list of raw calendars
+        if reload:
+            logger.info("Reloading remote data...")
+            self._fetch_raw_calendars()  # Refresh the list of raw calendars
+        else:
+            logger.info("Loading remote data...")
 
         self.task_lists = []  # Clear existing task lists
         logger.debug("Cleared local task_lists cache.")
