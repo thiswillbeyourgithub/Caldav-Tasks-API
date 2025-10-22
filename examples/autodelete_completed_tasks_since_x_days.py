@@ -206,7 +206,10 @@ def main(
             target_lists=[list_uid],  # Only load the specified list
             read_only=dry,  # Use read-only mode for dry runs to prevent accidental changes
             ssl_verify_cert=ssl_verify,
+            include_completed=True,
         )
+
+        api.load_remote_data()
 
         logger.info("Successfully connected to CalDAV server")
 
