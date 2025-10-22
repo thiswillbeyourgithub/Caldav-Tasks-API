@@ -196,7 +196,10 @@ def main(
                 summary=tt,
                 list_uid=list_uid,
                 parent=parent_id if create_as_child else "",
-                x_properties={"CREATOR": "terminal_quick_add.py"},
+                x_properties={
+                    "CREATOR": "terminal_quick_add.py",
+                    "apple-sort-order": str(itt),
+                },
             )
             api.add_task(task_data)
             if itt != len(task_texts):
