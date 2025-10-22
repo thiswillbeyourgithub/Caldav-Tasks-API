@@ -29,6 +29,7 @@ class TasksAPI:
         target_lists: Optional[List[str]] = None,
         read_only: bool = False,  # Added read_only parameter
         ssl_verify_cert: bool = True,
+        include_completed: bool = True,
     ):
         """
         Initializes the TasksAPI and connects to the CalDAV server.
@@ -42,6 +43,7 @@ class TasksAPI:
             target_lists: Optional list of calendar names or UIDs to filter by. If you have performance issues, use it to load only a subset of task lists.
             read_only: If True, API operates in read-only mode, preventing modifications.
             ssl_verify_cert: If True, verifies SSL certificates. Set to False for self-signed certs.
+            include_completed: If True, loads completed tasks from the server. Set to False to skip loading completed tasks for performance.
 
         Raises:
             ValueError: If required credentials cannot be determined from arguments or environment variables.
@@ -71,9 +73,10 @@ class TasksAPI:
         self.target_lists = target_lists  # Store the target lists
         self.read_only = read_only  # Store the read_only flag
         self.ssl_verify_cert = ssl_verify_cert  # Store the SSL verification flag
+        self.include_completed = include_completed  # Store the include_completed flag
 
         logger.debug(
-            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}, SSL Verify: {self.ssl_verify_cert}"
+            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}, SSL Verify: {self.ssl_verify_cert}, Include Completed: {self.include_completed}"
         )
 
         self._adjust_url()
@@ -225,9 +228,9 @@ class TasksAPI:
             failed_tasks_in_list_count = 0
 
             try:
-                todos_from_caldav: list[Todo] = cal.todos(include_completed=True)
+                todos_from_caldav: list[Todo] = cal.todos(include_completed=self.include_completed)
                 logger.debug(
-                    f"  Found {len(todos_from_caldav)} tasks in '{task_list_data.name}' via cal.todos()."
+                    f"  Found {len(todos_from_caldav)} tasks in '{task_list_data.name}' via cal.todos() (include_completed={self.include_completed})."
                 )
                 for todo_obj in todos_from_caldav:
                     try:
