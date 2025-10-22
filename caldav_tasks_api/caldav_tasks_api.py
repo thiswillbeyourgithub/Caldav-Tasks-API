@@ -164,31 +164,28 @@ class TasksAPI:
             all_calendars = [
                 cal
                 for cal in all_calendars_from_server  # Iterate over the fetched list
-                if "VTODO" in cal.get_supported_components()  # Ensure it's a task list
-            ]
-            logger.debug(
-                f"Filtered to {len(all_calendars)} calendars supporting VTODO component."
-            )
-
-            if self.target_lists:
-                logger.info(
-                    f"Filtering calendars based on target list: {self.target_lists}"
+                if (
+                    (
+                        self.target_lists is None
+                        or str(cal.id) in self.target_lists
+                        or str(cal.name) in self.target_lists
+                    )
+                    and (
+                        "VTODO"
+                        in cal.get_supported_components()  # Ensure it's a task list
+                    )
                 )
-                self.raw_calendars = [
-                    cal
-                    for cal in all_calendars
-                    if cal.name in self.target_lists
-                    or str(cal.id)
-                    in self.target_lists  # cal.id can be non-string (e.g. URL object)
-                ]
-                logger.info(
-                    f"Fetched {len(self.raw_calendars)} task-supporting calendars after filtering from {len(all_calendars)} VTODO-supporting calendars."
+            ]
+
+            if self.target_lists is not None:
+                logger.debug(
+                    f"Fetched {len(all_calendars)} calendars supporting VTODO component and matched the target_lists."
                 )
             else:
-                self.raw_calendars = all_calendars
                 logger.info(
                     f"Fetched {len(self.raw_calendars)} task-supporting calendars (no specific target lists)."
                 )
+            self.raw_calendars = all_calendars
 
         except Exception as e:
             logger.error(f"Error fetching calendars from server: {e}", exc_info=True)
