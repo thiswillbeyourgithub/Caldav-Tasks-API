@@ -17,7 +17,7 @@ from caldav_tasks_api.utils.data import (
 
 class TasksAPI:
 
-    VERSION: str = "1.4.0"
+    VERSION: str = "1.6.0"
 
     def __init__(
         self,
@@ -29,6 +29,7 @@ class TasksAPI:
         target_lists: Optional[List[str]] = None,
         read_only: bool = False,  # Added read_only parameter
         ssl_verify_cert: bool = True,
+        include_completed: bool = True,
     ):
         """
         Initializes the TasksAPI and connects to the CalDAV server.
@@ -39,9 +40,10 @@ class TasksAPI:
             password: The password for authentication. If None, reads from CALDAV_TASKS_API_PASSWORD environment variable.
             nextcloud_mode: If True, adjusts URL for Nextcloud's specific path.
             debug: If True, enables PDB post-mortem debugging on specific errors.
-            target_lists: Optional list of calendar names or UIDs to filter by.
+            target_lists: Optional list of calendar names or UIDs to filter by. If you have performance issues, use it to load only a subset of task lists.
             read_only: If True, API operates in read-only mode, preventing modifications.
             ssl_verify_cert: If True, verifies SSL certificates. Set to False for self-signed certs.
+            include_completed: If True, loads completed tasks from the server. Set to False to skip loading completed tasks for performance.
 
         Raises:
             ValueError: If required credentials cannot be determined from arguments or environment variables.
@@ -71,9 +73,10 @@ class TasksAPI:
         self.target_lists = target_lists  # Store the target lists
         self.read_only = read_only  # Store the read_only flag
         self.ssl_verify_cert = ssl_verify_cert  # Store the SSL verification flag
+        self.include_completed = include_completed  # Store the include_completed flag
 
         logger.debug(
-            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}, SSL Verify: {self.ssl_verify_cert}"
+            f"TasksAPI initializing with URL: {self.url}, User: {self.username}, Nextcloud Mode: {self.nextcloud_mode}, Debug: {self.debug}, Target Lists: {self.target_lists}, Read-Only: {self.read_only}, SSL Verify: {self.ssl_verify_cert}, Include Completed: {self.include_completed}"
         )
 
         self._adjust_url()
@@ -87,9 +90,6 @@ class TasksAPI:
         )  # Stores TaskListData objects, which will now contain their tasks
 
         self._connect(password_for_connection)
-
-        # Automatically load task data to populate task_lists during initialization
-        self.load_remote_data()
 
     def _adjust_url(self) -> None:
         """Adjusts the URL, e.g., adding https or Nextcloud's CalDAV path."""
@@ -167,31 +167,28 @@ class TasksAPI:
             all_calendars = [
                 cal
                 for cal in all_calendars_from_server  # Iterate over the fetched list
-                if "VTODO" in cal.get_supported_components()  # Ensure it's a task list
-            ]
-            logger.debug(
-                f"Filtered to {len(all_calendars)} calendars supporting VTODO component."
-            )
-
-            if self.target_lists:
-                logger.info(
-                    f"Filtering calendars based on target list: {self.target_lists}"
+                if (
+                    (
+                        self.target_lists is None
+                        or str(cal.id) in self.target_lists
+                        or str(cal.name) in self.target_lists
+                    )
+                    and (
+                        "VTODO"
+                        in cal.get_supported_components()  # Ensure it's a task list
+                    )
                 )
-                self.raw_calendars = [
-                    cal
-                    for cal in all_calendars
-                    if cal.name in self.target_lists
-                    or str(cal.id)
-                    in self.target_lists  # cal.id can be non-string (e.g. URL object)
-                ]
-                logger.info(
-                    f"Fetched {len(self.raw_calendars)} task-supporting calendars after filtering from {len(all_calendars)} VTODO-supporting calendars."
+            ]
+
+            if self.target_lists is not None:
+                logger.debug(
+                    f"Fetched {len(all_calendars)} calendars supporting VTODO component and matched the target_lists."
                 )
             else:
-                self.raw_calendars = all_calendars
                 logger.info(
                     f"Fetched {len(self.raw_calendars)} task-supporting calendars (no specific target lists)."
                 )
+            self.raw_calendars = all_calendars
 
         except Exception as e:
             logger.error(f"Error fetching calendars from server: {e}", exc_info=True)
@@ -231,9 +228,11 @@ class TasksAPI:
             failed_tasks_in_list_count = 0
 
             try:
-                todos_from_caldav: list[Todo] = cal.todos(include_completed=True)
+                todos_from_caldav: list[Todo] = cal.todos(
+                    include_completed=self.include_completed
+                )
                 logger.debug(
-                    f"  Found {len(todos_from_caldav)} tasks in '{task_list_data.name}' via cal.todos()."
+                    f"  Found {len(todos_from_caldav)} tasks in '{task_list_data.name}' via cal.todos() (include_completed={self.include_completed})."
                 )
                 for todo_obj in todos_from_caldav:
                     try:
