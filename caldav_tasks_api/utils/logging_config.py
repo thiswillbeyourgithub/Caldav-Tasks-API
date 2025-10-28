@@ -8,7 +8,7 @@ from platformdirs import user_log_dir
 
 def setup_logging():
     """Configures loguru loggers for console and file output."""
-    logger.remove()  # Remove default handler to avoid duplicate messages if re-configured
+    # logger.remove()  # Remove default handler to avoid duplicate messages if re-configured
 
     # Console logger
     # Determine console log level from environment variable, default to INFO
