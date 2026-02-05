@@ -12,13 +12,13 @@ import os
 import json
 import code  # For interactive debugging
 from typing import List, Optional
-import os  # Added for environment variable access
 
 import click
 from loguru import logger
 
 from caldav_tasks_api import TasksAPI
-from caldav_tasks_api.utils.data import TaskData  # Import TaskData
+from caldav_tasks_api.utils.data import TaskData
+from caldav_tasks_api.utils.logging_config import enable_debug_logging
 
 
 def get_api(
@@ -92,6 +92,8 @@ def show_summary(
     url, username, password, nextcloud_mode, debug, list, json_output, read_only_flag
 ):
     """Connect to CalDAV server and show a summary of all task lists and tasks."""
+    if debug:
+        enable_debug_logging()
     target_lists = list if list else None
     logger.debug(
         f"CLI initialized with url: {'***' if url else 'from env'}, "
@@ -185,6 +187,8 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
     List the most recently created, non-completed tasks, sorted by creation_date.
     Output is in JSON format.
     """
+    if debug:
+        enable_debug_logging()
     logger.debug(
         f"CLI list-latest-tasks initiated with url: {'***' if url else 'from env'}, "
         f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
@@ -367,6 +371,8 @@ def add_task(
     percent_complete,
 ):  # list_uid is specific to this command
     """Add a new task to a specified task list."""
+    if debug:
+        enable_debug_logging()
     logger.debug(
         f"CLI add-task initiated with url: {'***' if url else 'from env'}, "
         f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
@@ -497,6 +503,8 @@ def add_task(
 # target_lists is implicitly all lists for this command
 def list_lists(url, username, password, nextcloud_mode, debug):
     """Connect to CalDAV server and print a JSON list of task lists (name and UID)."""
+    if debug:
+        enable_debug_logging()
     logger.debug(
         f"CLI list-lists initiated with url: {'***' if url else 'from env'}, "
         f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
@@ -566,6 +574,8 @@ def list_lists(url, username, password, nextcloud_mode, debug):
 )
 def dump_all_tasks(url, username, password, nextcloud_mode, debug, list_uid):
     """Dump all tasks from a specified list in VTODO format."""
+    if debug:
+        enable_debug_logging()
     logger.debug(
         f"CLI dump-all-tasks initiated with url: {'***' if url else 'from env'}, "
         f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
