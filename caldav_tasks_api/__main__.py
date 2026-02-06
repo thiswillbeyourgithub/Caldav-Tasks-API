@@ -182,17 +182,29 @@ def show_summary(
     type=int,
     help="Maximum number of tasks to return [default: 10].",
 )
-def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, limit):
+@click.option(
+    "--simple/--no-simple",
+    "-s/-S",
+    default=False,
+    help="Show a human-readable list of task summaries instead of JSON. "
+    "Tasks are ordered by X-APPLE-SORT-ORDER (as in tasks.org) [default: disabled].",
+)
+def list_latest_tasks(
+    url, username, password, nextcloud_mode, debug, list_uid, limit, simple
+):
     """
     List the most recently created, non-completed tasks, sorted by creation_date.
-    Output is in JSON format.
+
+    Output is in JSON format by default. Use --simple/-s to show a
+    human-readable list of task summaries ordered by X-APPLE-SORT-ORDER
+    (the manual sort order used by the tasks.org Android app).
     """
     if debug:
         enable_debug_logging()
     logger.debug(
         f"CLI list-latest-tasks initiated with url: {'***' if url else 'from env'}, "
         f"user: {username or 'from env'}, nc_mode: {nextcloud_mode}, "
-        f"debug: {debug}, list_uid: {list_uid}, limit: {limit}"
+        f"debug: {debug}, list_uid: {list_uid}, limit: {limit}, simple: {simple}"
     )
 
     try:
@@ -275,9 +287,32 @@ def list_latest_tasks(url, username, password, nextcloud_mode, debug, list_uid, 
                 f"Task {i+1}/{len(limited_tasks)} (UID: {task.uid}) VTODO:\n{vtodo_string}"
             )
 
-        # Prepare data for JSON output
-        output_data = [task.to_dict() for task in limited_tasks]
-        click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
+        if simple:
+            # Human-readable output: sort by X-APPLE-SORT-ORDER to match
+            # the manual ordering in the tasks.org Android app.
+            # Lower sort-order values appear first; tasks without the
+            # property are placed at the end.
+            def get_sort_order(t: TaskData) -> int:
+                # XProperties uses __contains__ and __getitem__, not .get()
+                if "X-APPLE-SORT-ORDER" in t.x_properties:
+                    try:
+                        return int(t.x_properties["X-APPLE-SORT-ORDER"])
+                    except (ValueError, TypeError):
+                        logger.warning(
+                            f"Invalid X-APPLE-SORT-ORDER "
+                            f"'{t.x_properties['X-APPLE-SORT-ORDER']}' "
+                            f"for task UID {t.uid}. Placing at end."
+                        )
+                # No sort-order property → place at end
+                return 2**63
+
+            ordered_tasks = sorted(limited_tasks, key=get_sort_order)
+            for task in ordered_tasks:
+                click.echo(task.summary)
+        else:
+            # Default JSON output
+            output_data = [task.to_dict() for task in limited_tasks]
+            click.echo(json.dumps(output_data, ensure_ascii=False, indent=2))
 
         if debug:
             click.echo(
