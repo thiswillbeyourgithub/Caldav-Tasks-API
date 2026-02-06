@@ -74,15 +74,20 @@ caldav-tasks-api add-task --url <your_url> --username <user> --password <pass> -
 
 #### `list-latest-tasks`
 
-**Description:** Lists non-completed tasks from a specific task list (or all lists if `--list-uid` is not specified and the default environment variable isn't set). Tasks are selected by their creation date (most recent first), up to the specified limit. The final output in JSON then lists these selected tasks, ordered from oldest to newest among the selection. This command is inherently read-only.
+**Description:** Lists non-completed tasks from a specific task list (or all lists if `--list-uid` is not specified and the default environment variable isn't set). Tasks are selected by their creation date (most recent first), up to the specified limit. The default output is JSON, listing these selected tasks ordered from oldest to newest. Use `--simple` to get a human-readable list of task summaries instead, ordered by `X-APPLE-SORT-ORDER` (the manual sort order used by the tasks.org Android app). This command is inherently read-only.
 
 **Key Options:**
 - `--list-uid TEXT`: UID of the task list to filter tasks from. If not provided, uses the `CALDAV_TASKS_API_DEFAULT_LIST_UID` environment variable if set.
 - `--limit INTEGER`: The maximum number of tasks to return (default is 10).
+- `--simple / --no-simple, -s / -S`: Show a human-readable list of task summaries (one per line) ordered by `X-APPLE-SORT-ORDER`, instead of JSON output. Tasks without a sort order are placed at the end. (default: disabled)
 
-**Example:**
+**Examples:**
 ```bash
+# JSON output (default)
 caldav-tasks-api list-latest-tasks --url <your_url> --username <user> --password <pass> --list-uid "task-list-xyz" --limit 5
+
+# Human-readable output ordered as in tasks.org
+caldav-tasks-api list-latest-tasks --url <your_url> --username <user> --password <pass> --list-uid "task-list-xyz" --simple
 ```
 
 ## Python API

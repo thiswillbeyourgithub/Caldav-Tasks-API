@@ -66,6 +66,9 @@ caldav-tasks-api add-task \
 # List the latest 5 tasks from a specific list (output is JSON)
 caldav-tasks-api list-latest-tasks --list-uid "your-list-uid-here" --limit 5 > latest_tasks.json
 
+# List latest tasks as human-readable summaries, ordered as in tasks.org
+caldav-tasks-api list-latest-tasks --list-uid "your-list-uid-here" --simple
+
 # List all available task lists (output is JSON)
 caldav-tasks-api list-lists > all_lists.json
 ```
@@ -97,7 +100,8 @@ caldav-tasks-api list-lists > all_lists.json
   - `--percent-complete INTEGER`: Completion percentage (0-100) [default: 0].
 - `list-latest-tasks`:
   - `--list-uid TEXT`: UID of the task list to filter from (or `CALDAV_TASKS_API_DEFAULT_LIST_UID` env var).
-  - `--limit INTEGER`: Maximum number of tasks to return (default: 10). Output is always JSON.
+  - `--limit INTEGER`: Maximum number of tasks to return (default: 10).
+  - `--simple / --no-simple, -s / -S`: Show a human-readable list of task summaries (one per line) instead of JSON. Tasks are ordered by `X-APPLE-SORT-ORDER`, matching the manual sort order used by the tasks.org Android app (default: disabled).
 - `list-lists`: Output is always JSON.
 
 > **Note on Read/Write Modes:**

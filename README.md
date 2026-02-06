@@ -100,8 +100,11 @@ python -m caldav_tasks_api show-summary --json
 # List available task lists
 python -m caldav_tasks_api list-lists
 
-# List latest tasks from a specific list
+# List latest tasks from a specific list (JSON output)
 python -m caldav_tasks_api list-latest-tasks --list-uid <list-uid>
+
+# List latest tasks as human-readable summaries, ordered as in tasks.org
+python -m caldav_tasks_api list-latest-tasks --list-uid <list-uid> --simple
 
 # Dump all the tasks of a list as VTODO format
 python -m caldav_tasks_api dump-all-tasks --list-uid <list-uid>
