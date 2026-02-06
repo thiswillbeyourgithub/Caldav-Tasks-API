@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="caldav-tasks-api",
-    version="1.7.1",
+    version="1.8.0",
     author="thiswillbeyourgithub",
     description="A Python client for CalDAV task servers, with a CLI.",
     long_description=open("README.md").read(),

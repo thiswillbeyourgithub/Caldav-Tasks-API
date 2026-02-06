@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath("./../.."))
 project = "Caldav-Tasks-API"
 copyright = "2025, thiswillbeyourgithub"
 author = "thiswillbeyourgithub"
-release = "1.7.1"
+release = "1.8.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
