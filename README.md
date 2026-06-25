@@ -12,6 +12,10 @@ A Python library and command-line interface (CLI) for interacting with CalDAV ta
 - [Compatibility](#compatibility)
 - [Features](#features)
 - [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  - [Command Line Interface](#command-line-interface)
+  - [Python API](#python-api)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
