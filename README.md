@@ -6,7 +6,7 @@
 
 A Python library and command-line interface (CLI) for interacting with CalDAV task lists (VTODOs). This project provides tools to connect to a CalDAV server, fetch task lists and tasks, create new tasks, and delete existing ones.
 
-**Looking for calendar events instead of tasks?** I made [CalDAV-Cal-API](https://github.com/thiswillbeyourgithub/CaldavCalAPI/), which does the same job for VEVENTs: same layout, same architecture, same naming, so the two feel like one library from the outside. Be warned that it is fully vibecoded, written end to end by [Claude Code](https://claude.com/claude-code) from an architecture I specified but did not hand-write, and I have not audited it line by line.
+**Looking for calendar events instead of tasks?** I made [CalDAV-Cal-API](https://github.com/thiswillbeyourgithub/Caldav-Cal-API), which does the same job for VEVENTs: same layout, same architecture, same naming, so the two feel like one library from the outside. Be warned that it is fully vibecoded, written end to end by [Claude Code](https://claude.com/claude-code) from an architecture I specified but did not hand-write, and I have not audited it line by line.
 
 ## Table of Contents
 
